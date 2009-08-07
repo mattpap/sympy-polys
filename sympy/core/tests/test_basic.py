@@ -699,3 +699,21 @@ def test_contains():
     assert f in p
     assert g in p
     assert not h in p
+
+def test_as_Something():
+    assert x.as_Add() == [x]
+    assert x.as_Mul() == [x]
+    assert x.as_Pow() == (x, S.One)
+
+    assert (x*y*z).as_Add() == [x*y*z]
+    assert sorted((x*y*z).as_Mul()) == [x, y, z]
+    assert (x*y*z).as_Pow() == (x*y*z, S.One)
+
+    assert sorted((x+y+z).as_Add()) == [x, y, z]
+    assert (x+y+z).as_Mul() == [x+y+z]
+    assert (x+y+z).as_Pow() == (x+y+z, S.One)
+
+    assert ((x+y)**z).as_Add() == [(x+y)**z]
+    assert ((x+y)**z).as_Mul() == [(x+y)**z]
+    assert ((x+y)**z).as_Pow() == (x+y, z)
+
