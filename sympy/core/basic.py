@@ -2295,6 +2295,17 @@ class Basic(AssumeMeths):
             return c,e
         raise ValueError("cannot compute leadterm(%s, %s), got c=%s" % (self, x, c))
 
+    def as_Add(self):
+        """Returns `self` as it was `Add` instance. """
+        return [self]
+
+    def as_Mul(self):
+        """Returns `self` as it was `Mul` instance. """
+        return [self]
+
+    def as_Pow(self):
+        """Returns `self` as it was `Pow` instance. """
+        return (self, S.One)
 
     ##########################################################################
     ##################### END OF BASIC CLASS #################################
@@ -2449,3 +2460,4 @@ from add import Add
 from relational import Inequality, StrictInequality
 from function import FunctionClass, Derivative
 from numbers import Rational, Integer
+

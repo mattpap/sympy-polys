@@ -639,3 +639,21 @@ def test_count_ops():
     f = (x*y + 3/y)**(3 + 2)
     assert f.count_ops() == Symbol('ADD') + 2*Symbol('MUL') + 2*Symbol('POW')
     assert f.count_ops(symbolic=False) == 5
+
+def test_as_Something():
+    assert x.as_Add() == [x]
+    assert x.as_Mul() == [x]
+    assert x.as_Pow() == (x, S.One)
+
+    assert (x*y*z).as_Add() == [x*y*z]
+    assert sorted((x*y*z).as_Mul()) == [x, y, z]
+    assert (x*y*z).as_Pow() == (x*y*z, S.One)
+
+    assert sorted((x+y+z).as_Add()) == [x, y, z]
+    assert (x+y+z).as_Mul() == [x+y+z]
+    assert (x+y+z).as_Pow() == (x+y+z, S.One)
+
+    assert ((x+y)**z).as_Add() == [(x+y)**z]
+    assert ((x+y)**z).as_Mul() == [(x+y)**z]
+    assert ((x+y)**z).as_Pow() == (x+y, z)
+
