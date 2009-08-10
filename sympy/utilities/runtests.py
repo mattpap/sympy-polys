@@ -21,6 +21,8 @@ from timeit import default_timer as clock
 import doctest as pdoctest # avoid clashing with our doctest() function
 from sympy.utilities import any
 
+from sympy.utilities import any, all
+
 def isgeneratorfunction(object):
     """
     Return true if the object is a user-defined generator function.
@@ -729,3 +731,4 @@ class PyTestReporter(Reporter):
             self.write(" ")
             self.write("[FAIL]", "Red", align="right")
         self.write("\n")
+
