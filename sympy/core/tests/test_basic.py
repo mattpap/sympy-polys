@@ -210,13 +210,14 @@ def test_atoms():
 
    assert sorted(list(Poly(0, x).atoms())) == [S.Zero]
    assert sorted(list(Poly(1, x).atoms())) == [S.One]
-   assert sorted(list(Poly(x, x).atoms())) == sorted([S.One, x])
-   assert sorted(list(Poly(x, x, y).atoms())) == sorted([S.One, x])
-   assert sorted(list(Poly(x + y, x, y).atoms())) == sorted([S.One, x, y])
-   assert sorted(list(Poly(x + y, x, y, z).atoms())) == sorted([S.One, x, y])
-   assert sorted(list(Poly(x + y*t, x, y, z).atoms())) == \
-           sorted([S.One, t, x, y])
-   I=S.ImaginaryUnit
+
+   assert sorted(list(Poly(x, x).atoms())) == [x]
+   assert sorted(list(Poly(x, x, y).atoms())) == [x]
+   assert sorted(list(Poly(x + y, x, y).atoms())) == sorted([x, y])
+   assert sorted(list(Poly(x + y, x, y, z).atoms())) == sorted([x, y])
+   assert sorted(list(Poly(x + y*t, x, y, z).atoms())) == sorted([t, x, y])
+
+   I = S.ImaginaryUnit
    assert list((I*pi).atoms(NumberSymbol)) == [pi]
    assert sorted((I*pi).atoms(NumberSymbol, I)) == \
           sorted((I*pi).atoms(I,NumberSymbol)) == [pi, I]
@@ -364,10 +365,6 @@ def test_args():
 def test_iter_basic_args():
     assert list(sin(x*y).iter_basic_args()) == [x*y]
     assert list((x**y).iter_basic_args()) == [x, y]
-
-    assert list(Poly(0, x).iter_basic_args()) == [S.Zero]
-    assert list(Poly(1, x).iter_basic_args()) == [S.One]
-    assert list(Poly(x, x).iter_basic_args()) == [S.One, x]
 
 def test_noncommutative_expand_issue658():
     A, B, C = symbols('ABC', commutative=False)
