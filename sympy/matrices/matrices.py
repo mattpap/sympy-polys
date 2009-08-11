@@ -3,7 +3,7 @@ from sympy import Basic, Symbol, Integer
 from sympy.core import sympify
 
 from sympy.core.basic import S, C
-from sympy.polys import Poly, roots
+from sympy.polys import Poly, roots, cancel
 from sympy.simplify import simplify
 from sympy.utilities import any
 
@@ -1224,7 +1224,7 @@ class Matrix(object):
                         if D.is_Atom:
                             M[i, j] = D
                         else:
-                            M[i, j] = Poly.cancel(D)
+                            M[i, j] = cancel(D)
 
             det = sign * M[n-1, n-1]
 
@@ -1432,7 +1432,7 @@ class Matrix(object):
     def berkowitz_charpoly(self, x):
         """Computes characteristic polynomial minors using Berkowitz method."""
         coeffs, monoms = self.berkowitz()[-1], range(self.rows+1)
-        return Poly(list(zip(coeffs, reversed(monoms))), x)
+        return Poly(dict(zip(reversed(monoms), coeffs)), x)
 
     charpoly = berkowitz_charpoly
 
@@ -2053,3 +2053,4 @@ def a2idx(a):
         return int(a)
     if hasattr(a, "__index__"):
         return a.__index__()
+
