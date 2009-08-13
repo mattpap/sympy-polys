@@ -88,7 +88,7 @@ def deltaintegrate(f, x):
                 if (len(f.args) <= 1 or f.args[1]==0):
                     return Heaviside(f.args[0])
                 else:
-                    return (DiracDelta(f.args[0],f.args[1]-1)/ f.args[0].as_poly().coeffs[0])
+                    return (DiracDelta(f.args[0],f.args[1]-1)/ f.args[0].as_poly().LC())
         else:#let's try to integrate the simplified expression
             fh = sympy.integrals.integrate(h,x)
             return fh
@@ -108,3 +108,4 @@ def deltaintegrate(f, x):
                 point = solve(dg.args[0],x)[0]
                 return (rest_mult.subs(x,point)*Heaviside(dg.args[0]))
     return None
+
