@@ -139,8 +139,18 @@ class Integral(Basic):
                 if ab is None:
                     function = antideriv
                 else:
-                    a,b = ab
-                    function = antideriv._eval_interval(x, a, b)
+                    a, b = ab
+
+                    if antideriv.is_Poly:
+                        gens = list(antideriv.gens)
+                        gens.remove(x)
+
+                        antideriv = antideriv.as_basic()
+
+                        function = antideriv._eval_interval(x, a, b)
+                        function = Poly(function, *gens)
+                    else:
+                        function = antideriv._eval_interval(x, a, b)
 
         return function
 
@@ -255,7 +265,7 @@ class Integral(Basic):
         poly = f.as_poly(x)
 
         if poly is not None:
-            return poly.integrate(x).as_basic()
+            return poly.integrate().as_basic()
 
         # since Integral(f=g1+g2+...) == Integral(g1) + Integral(g2) + ...
         # we are going to handle Add terms separately,

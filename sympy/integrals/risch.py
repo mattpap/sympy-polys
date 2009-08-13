@@ -14,9 +14,9 @@ from sympy.functions import sqrt, erf
 
 from sympy.solvers import solve
 from sympy.simplify import simplify, together
-
-from sympy.polys import Poly, quo, gcd, lcm, root_factors, \
+from sympy.polys import Poly, quo, gcd, lcm, \
     monomials, factor, PolynomialError
+from sympy.polys.rootfinding import root_factors
 
 def components(f, x):
     """Returns a set of all functional components of the given expression
@@ -213,9 +213,9 @@ def heurisch(f, x, **kwargs):
     diffs = [ substitute(simplify(g.diff(x))) for g in terms ]
 
     denoms = [ g.as_numer_denom()[1] for g in diffs ]
-    denom = reduce(lambda p, q: lcm(p, q, V), denoms)
+    denom = reduce(lambda p, q: lcm(p, q, *V), denoms)
 
-    numers = [ Poly.cancel(denom * g, *V) for g in diffs ]
+    numers = [ simplify(denom * g) for g in diffs ]
 
     def derivation(h):
         return Add(*[ d * h.diff(v) for d, v in zip(numers, V) ])
@@ -226,7 +226,7 @@ def heurisch(f, x, **kwargs):
                 continue
 
             if derivation(p) is not S.Zero:
-                c, q = p.as_poly(y).as_primitive()
+                c, q = p.as_poly(y).primitive()
                 return deflation(c)*gcd(q, q.diff(y))
         else:
             return p
@@ -237,7 +237,7 @@ def heurisch(f, x, **kwargs):
                 continue
 
             if derivation(y) is not S.Zero:
-                c, q = p.as_poly(y).as_primitive()
+                c, q = p.as_poly(y).primitive()
 
                 q = q.as_basic()
 
@@ -246,10 +246,10 @@ def heurisch(f, x, **kwargs):
 
                 c_split = splitter(c)
 
-                if s.as_poly(y).degree == 0:
+                if s.as_poly(y).degree() == 0:
                     return (c_split[0], q * c_split[1])
 
-                q_split = splitter(Poly.cancel((q, s), *V))
+                q_split = splitter(simplify(q / s))
 
                 return (c_split[0]*q_split[0]*s, c_split[1]*q_split[1])
         else:
@@ -277,9 +277,9 @@ def heurisch(f, x, **kwargs):
     polys = list(v_split) + [ u_split[0] ] + special.keys()
 
     s = u_split[0] * Mul(*[ k for k, v in special.iteritems() if v ])
-    a, b, c = [ p.as_poly(*V).degree for p in [s, P, Q] ]
+    a, b, c = [ p.as_poly(*V).total_degree() for p in [s, P, Q] ]
 
-    poly_denom = s * v_split[0] * deflation(v_split[1])
+    poly_denom = (s * v_split[0] * deflation(v_split[1])).as_basic()
 
     def exponent(g):
         if g.is_Pow:
@@ -312,9 +312,10 @@ def heurisch(f, x, **kwargs):
     for poly in polys:
         if poly.has(*V):
             try:
-                factorization = factor(poly, *V)
+                factorization = factor(poly, greedy=True)
             except PolynomialError:
                 factorization = poly
+            factorization = poly
 
             if factorization.is_Mul:
                 reducibles |= set(factorization.args)
@@ -331,7 +332,7 @@ def heurisch(f, x, **kwargs):
             else:
                 continue
 
-            irreducibles |= set(root_factors(poly, z, domain=field))
+            irreducibles |= set(root_factors(poly, z, filter=field))
 
         log_coeffs, log_part = [], []
         B = _symbols('B', len(irreducibles))
