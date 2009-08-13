@@ -86,7 +86,7 @@ class Product(Basic):
             poly = term.as_poly(k)
 
             A = B = Q = S.One
-            C_= poly.LC
+            C_= poly.LC()
 
             all_roots = roots(poly, multiple=True)
 
@@ -94,10 +94,10 @@ class Product(Basic):
                 A *= C.RisingFactorial(a-r, n-a+1)
                 Q *= n - r
 
-            if len(all_roots) < poly.degree:
+            if len(all_roots) < poly.degree():
                 B = Product(quo(poly, Q.as_poly(k)), (k, a, n))
 
-            return poly.LC**(n-a+1) * A * B
+            return poly.LC()**(n-a+1) * A * B
         elif term.is_Add:
             p, q = term.as_numer_denom()
 
@@ -140,3 +140,4 @@ def product(*args, **kwargs):
         return prod.doit()
     else:
         return prod
+
