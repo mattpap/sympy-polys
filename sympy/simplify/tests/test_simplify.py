@@ -399,3 +399,4 @@ def test_diff():
     assert simplify(2*f(x)*f(x).diff(x)-diff(f(x)**2,x)) == 0
     assert simplify(diff(1/f(x),x)+f(x).diff(x)/f(x)**2) == 0
     assert simplify(f(x).diff(x,y)-f(x).diff(y,x)) == 0
+
