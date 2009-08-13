@@ -260,6 +260,9 @@ class exp(Function):
         import sage.all as sage
         return sage.exp(self.args[0]._sage_())
 
+    def as_Pow(self):
+        return S.Exp1, self.args[0]
+
 class log(Function):
 
     nargs = (1,2)
@@ -555,3 +558,4 @@ class LambertW(Function):
             return LambertW(x)/(x*(1+LambertW(x)))
         else:
             raise ArgumentIndexError(self, argindex)
+
