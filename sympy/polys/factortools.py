@@ -1,13 +1,17 @@
 """Polynomial factorization routines in characteristic zero. """
 
+import cython
+
 from sympy.polys.galoistools import (
+    sort_factors_no_mult,
+    sort_factors_if_mult,
     gf_from_int_poly, gf_to_int_poly,
     gf_degree, gf_from_dict,
     gf_lshift, gf_add_mul, gf_mul,
     gf_div, gf_rem,
     gf_gcd, gf_gcdex,
     gf_sqf_p,
-    gf_factor_sqf,
+    gf_factor_sqf
 )
 
 from sympy.polys.densebasic import (
@@ -23,7 +27,7 @@ from sympy.polys.densebasic import (
     dup_inflate, dmp_strip,
     dmp_exclude, dmp_include,
     dmp_inject, dmp_eject,
-    dmp_terms_gcd,
+    dmp_terms_gcd
 )
 
 from sympy.polys.densearith import (
@@ -41,7 +45,7 @@ from sympy.polys.densearith import (
     dup_max_norm, dmp_max_norm,
     dup_l1_norm, dmp_l1_norm,
     dup_mul_ground, dmp_mul_ground,
-    dup_exquo_ground, dmp_exquo_ground,
+    dup_exquo_ground, dmp_exquo_ground
 )
 
 from sympy.polys.densetools import (
@@ -53,11 +57,11 @@ from sympy.polys.densetools import (
     dup_primitive, dmp_primitive, dmp_ground_primitive,
     dup_ground_to_ring, dmp_ground_to_ring,
     dup_eval, dmp_eval_tail,
-    dmp_eval_in, dmp_diff_eval_in,
+    dmp_eval_in, dmp_diff_eval_in
 )
 
 from sympy.polys.polyerrors import (
-    ExtraneousFactors, DomainError,
+    ExtraneousFactors, DomainError
 )
 
 from sympy.ntheory import nextprime, isprime, factorint
@@ -138,6 +142,7 @@ def dup_zz_hensel_step(m, f, g, h, s, t, K):
 
     return G, H, S, T
 
+@cython.locals(l=cython.int, r=cython.int, k=cython.int, d=cython.int)
 def dup_zz_hensel_lift(p, f, f_list, l, K):
     """Multifactor Hensel lifting in `Z[x]`.
 
@@ -169,7 +174,7 @@ def dup_zz_hensel_lift(p, f, f_list, l, K):
         return [ dup_trunc(F, p**l, K) ]
 
     m = p
-    k = int(r // 2)
+    k = r // 2
     d = int(ceil(log(l, 2)))
 
     g = gf_from_int_poly([lc], p)
@@ -195,6 +200,7 @@ def dup_zz_hensel_lift(p, f, f_list, l, K):
     return dup_zz_hensel_lift(p, g, f_list[:k], l, K) \
          + dup_zz_hensel_lift(p, h, f_list[k:], l, K)
 
+@cython.locals(l=cython.int, s=cython.int)
 def dup_zz_zassenhaus(f, K):
     """Factor primitive square-free polynomials in `Z[x]`. """
     n = dup_degree(f)
@@ -207,9 +213,9 @@ def dup_zz_zassenhaus(f, K):
     B = int(abs(K.sqrt(n+1)*2**n*A*b))
     C = int((n+1)**(2*n)*A**(2*n-1))
     gamma = int(ceil(2*log(C, 2)))
-    prime_max = int(2*gamma*log(gamma))
+    bound = int(2*gamma*log(gamma))
 
-    for p in xrange(3, prime_max+1):
+    for p in xrange(3, bound+1):
         if not isprime(p) or b % p == 0:
             continue
 
@@ -220,7 +226,7 @@ def dup_zz_zassenhaus(f, K):
         if gf_sqf_p(F, p, K):
             break
 
-    l = K(int(ceil(log(2*B + 1, p))))
+    l = int(ceil(log(2*B + 1, p)))
 
     modular = []
 
@@ -278,6 +284,7 @@ def dup_zz_irreducible_p(f, K):
             if (lc % p) and (tc % p**2):
                 return True
 
+@cython.locals(n=cython.int, p=cython.int, k=cython.int)
 def dup_zz_cyclotomic_poly(n, K):
     """Efficiently generate n-th cyclotomic polnomial. """
     h = [K.one,-K.one]
@@ -288,6 +295,21 @@ def dup_zz_cyclotomic_poly(n, K):
 
     return h
 
+@cython.locals(n=cython.int, p=cython.int, k=cython.int, i=cython.int)
+def _dup_cyclotomic_decompose(n, K):
+    H = [[K.one,-K.one]]
+
+    for p, k in factorint(n).iteritems():
+        Q = [ dup_exquo(dup_inflate(h, p, K), h, K) for h in H ]
+        H.extend(Q)
+
+        for i in xrange(1, k):
+            Q = [ dup_inflate(q, p, K) for q in Q ]
+            H.extend(Q)
+
+    return H
+
+@cython.locals(n=cython.int)
 def dup_zz_cyclotomic_factor(f, K):
     """Efficiently factor polynomials `x**n - 1` and `x**n + 1` in `Z[x]`.
 
@@ -317,33 +339,21 @@ def dup_zz_cyclotomic_factor(f, K):
     if any([ bool(cf) for cf in f[1:-1] ]):
         return None
 
-    def decompose(n):
-        H = [[K.one,-K.one]]
-
-        for p, k in factorint(n).iteritems():
-            Q = [ dup_exquo(dup_inflate(h, p, K), h, K) for h in H ]
-            H.extend(Q)
-
-            for i in xrange(1, k):
-                Q = [ dup_inflate(q, p, K) for q in Q ]
-                H.extend(Q)
-
-        return H
-
     n = dup_degree(f)
-    F = decompose(n)
+    F = _dup_cyclotomic_decompose(n, K)
 
     if not K.is_one(tc_f):
         return F
     else:
         H = []
 
-        for h in decompose(2*n):
+        for h in _dup_cyclotomic_decompose(2*n, K):
             if h not in F:
                 H.append(h)
 
         return H
 
+@cython.locals(n=cython.int)
 def dup_zz_factor_sqf(f, K, **args):
     """Factor square-free (non-primitive) polyomials in `Z[x]`. """
     cont, g = dup_primitive(f, K)
@@ -367,16 +377,9 @@ def dup_zz_factor_sqf(f, K, **args):
     if factors is None:
         factors = dup_zz_zassenhaus(g, K)
 
-    def compare(f_a, f_b):
-        i = len(f_a) - len(f_b)
+    return cont, sort_factors_no_mult(factors)
 
-        if not i:
-            return cmp(f_a, f_b)
-        else:
-            return i
-
-    return cont, sorted(factors, compare)
-
+@cython.locals(n=cython.int, k=cython.int)
 def dup_zz_factor(f, K, **args):
     """Factor (non square-free) polynomials in `Z[x]`.
 
@@ -453,20 +456,7 @@ def dup_zz_factor(f, K, **args):
 
         factors.append((h, k))
 
-    def compare((f_a, e_a), (f_b, e_b)):
-        i = len(f_a) - len(f_b)
-
-        if not i:
-            j = e_a - e_b
-
-            if not j:
-                return cmp(f_a, f_b)
-            else:
-                return j
-        else:
-            return i
-
-    return cont, sorted(factors, compare)
+    return cont, sort_factors_if_mult(factors)
 
 def dmp_zz_wang_non_divisors(E, cs, ct, K):
     """Wang/EEZ: Compute a set of valid divisors.  """
@@ -487,6 +477,7 @@ def dmp_zz_wang_non_divisors(E, cs, ct, K):
 
     return result[1:]
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_zz_wang_test_points(f, T, ct, A, u, K):
     """Wang/EEZ: Test evaluation points for suitability. """
     if not dmp_eval_tail(dmp_LC(f, K), A, u-1, K):
@@ -502,7 +493,9 @@ def dmp_zz_wang_test_points(f, T, ct, A, u, K):
     if K.is_negative(dup_LC(h, K)):
         c, h = -c, dup_neg(h, K)
 
-    E = [ dmp_eval_tail(t, A, u-1, K) for t, _ in T ]
+    v = u-1
+
+    E = [ dmp_eval_tail(t, A, v, K) for t, _ in T ]
     D = dmp_zz_wang_non_divisors(E, c, ct, K)
 
     if D is not None:
@@ -510,6 +503,7 @@ def dmp_zz_wang_test_points(f, T, ct, A, u, K):
     else:
         return None
 
+@cython.locals(u=cython.int, v=cython.int, i=cython.int, j=cython.int, k=cython.int)
 def dmp_zz_wang_lead_coeffs(f, T, cs, E, H, A, u, K):
     """Wang/EEZ: Compute correct leading coefficients. """
     C, J, v = [], [0]*len(E), u-1
@@ -563,6 +557,7 @@ def dmp_zz_wang_lead_coeffs(f, T, cs, E, H, A, u, K):
 
     return f, HHH, CCC
 
+@cython.locals(m=cython.int)
 def dup_zz_diophantine(F, m, p, K):
     """Wang/EEZ: Solve univariate Diophantine equations. """
     if len(F) == 2:
@@ -610,6 +605,8 @@ def dup_zz_diophantine(F, m, p, K):
 
     return result
 
+@cython.locals(u=cython.int, v=cython.int, d=cython.int, n=cython.int,
+               i=cython.int, j=cython.int, k=cython.int)
 def dmp_zz_diophantine(F, c, A, d, p, u, K):
     """Wang/EEZ: Solve multivariate Diophantine equations. """
     if not A:
@@ -677,6 +674,8 @@ def dmp_zz_diophantine(F, c, A, d, p, u, K):
 
     return S
 
+@cython.locals(u=cython.int, v=cython.int, d=cython.int, dj=cython.int,
+               n=cython.int, i=cython.int, j=cython.int, k=cython.int, w=cython.int)
 def dmp_zz_wang_hensel_lifting(f, H, LC, A, p, u, K):
     """Wang/EEZ: Parallel Hensel lifting algorithm. """
     S, n, v = [f], len(A), u-1
@@ -732,6 +731,8 @@ EEZ_NUM_OK    = 3
 EEZ_NUM_TRY   = 20
 EEZ_MOD_STEP  = 25
 
+@cython.locals(u=cython.int, mod=cython.int, i=cython.int,
+               j=cython.int, s_arg=cython.int, negative=cython.int)
 def dmp_zz_wang(f, u, K):
     """Factor primitive square-free polynomials in `Z[X]`.
 
@@ -765,7 +766,7 @@ def dmp_zz_wang(f, u, K):
     ct, T = dmp_zz_factor(dmp_LC(f, K), u-1, K)
 
     b = dmp_zz_mignotte_bound(f, u, K)
-    p = nextprime(b)
+    p = K(nextprime(b))
 
     bad_points = set([])
     r, mod = None, 3
@@ -851,6 +852,7 @@ def dmp_zz_wang(f, u, K):
         else:
             return -K.one, F
 
+@cython.locals(u=cython.int, d=cython.int, k=cython.int)
 def dmp_zz_factor(f, u, K):
     """Factor (non square-free) polynomials in `Z[X]`.
 
@@ -894,7 +896,7 @@ def dmp_zz_factor(f, u, K):
 
     cont, g = dmp_ground_primitive(f, u, K)
 
-    if all(d <= 0 for d in dmp_degree_list(g, u)):
+    if all([ d <= 0 for d in dmp_degree_list(g, u) ]):
         return cont, []
 
     if dmp_ground_LC(g, u, K) < 0:
@@ -926,29 +928,18 @@ def dmp_zz_factor(f, u, K):
     for g, k in dmp_zz_factor(G, u-1, K)[1]:
         factors.insert(0, ([g], k))
 
-    def compare((f_a, e_a), (f_b, e_b)):
-        i = len(f_a) - len(f_b)
-
-        if not i:
-            j = e_a - e_b
-
-            if not j:
-                return cmp(f_a, f_b)
-            else:
-                return j
-        else:
-            return i
-
-    return cont, sorted(factors, compare)
+    return cont, sort_factors_if_mult(factors)
 
 def dup_ext_factor(f, K):
     """Factor polynomials over algebraic number fields. """
     raise NotImplementedError('algebraic numbers')
 
+@cython.locals(u=cython.int)
 def dmp_ext_factor(f, u, K):
     """Factor polynomials over algebraic number fields. """
     raise NotImplementedError('algebraic numbers')
 
+@cython.locals(i=cython.int, k=cython.int, u=cython.int)
 def dup_factor_list(f, K0, **args):
     """Factor polynomials into irreducibles in `K[x]`. """
     if not K0.has_CharacteristicZero:
@@ -987,6 +978,27 @@ def dup_factor_list(f, K0, **args):
 
     return coeff, factors
 
+@cython.locals(u=cython.int, v=cython.int, i=cython.int, k=cython.int)
+def _dmp_inner_factor(f, u, K):
+    """Simplify factorization in `Z[X]` as much as possible. """
+    gcd, f = dmp_terms_gcd(f, u, K)
+    J, f, v = dmp_exclude(f, u, K)
+
+    coeff, factors = dmp_zz_factor(f, v, K)
+
+    for i, (f, k) in enumerate(factors):
+        factors[i] = (dmp_include(f, J, v, K), k)
+
+    for i, g in enumerate(reversed(gcd)):
+        if not g:
+            continue
+
+        term = {(0,)*(u-i) + (1,) + (0,)*i: K.one}
+        factors.insert(0, (dmp_from_dict(term, u, K), g))
+
+    return coeff, factors
+
+@cython.locals(u=cython.int, v=cython.int, i=cython.int, k=cython.int)
 def dmp_factor_list(f, u, K0, **args):
     """Factor polynomials into irreducibles in `K[X]`. """
     if not u:
@@ -994,25 +1006,6 @@ def dmp_factor_list(f, u, K0, **args):
 
     if not K0.has_CharacteristicZero:
         raise DomainError('only characteristic zero allowed')
-
-    def _dmp_inner_factor(f, u, K):
-        """Simplify multivariate factorization. """
-        gcd, f = dmp_terms_gcd(f, u, K)
-        J, f, v = dmp_exclude(f, u, K)
-
-        coeff, factors = dmp_zz_factor(f, v, K)
-
-        for i, (f, k) in enumerate(factors):
-            factors[i] = (dmp_include(f, J, v, K), k)
-
-        for i, g in enumerate(reversed(gcd)):
-            if not g:
-                continue
-
-            term = {(0,)*(u-i) + (1,) + (0,)*i: K.one}
-            factors.insert(0, (dmp_from_dict(term, u, K), g))
-
-        return coeff, factors
 
     if K0.has_Field:
         K = K0.get_ring()
@@ -1025,12 +1018,12 @@ def dmp_factor_list(f, u, K0, **args):
     if K.is_ZZ:
         coeff, factors = _dmp_inner_factor(f, u, K)
     elif K.is_Poly:
-        f, w = dmp_inject(f, u, K)
+        f, v = dmp_inject(f, u, K)
 
-        coeff, factors = dmp_factor_list(f, w, K.dom, **args)
+        coeff, factors = dmp_factor_list(f, v, K.dom, **args)
 
         for i, (f, k) in enumerate(factors):
-            factors[i] = (dmp_eject(f, w, K), k)
+            factors[i] = (dmp_eject(f, v, K), k)
 
         coeff = K.convert(coeff, K.dom)
     else:

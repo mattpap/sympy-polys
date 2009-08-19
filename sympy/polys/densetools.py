@@ -1,5 +1,7 @@
 """Advanced tools for dense recursive polynomials in `K[x]` or `K[X]`. """
 
+import cython
+
 from sympy.polys.densebasic import (
     dup_strip, dmp_strip,
     dup_convert, dmp_convert,
@@ -11,7 +13,7 @@ from sympy.polys.densebasic import (
     dmp_multi_deflate, dmp_inflate,
     dup_to_raw_dict, dup_from_raw_dict,
     dmp_raise, dmp_apply_pairs,
-    dmp_zeros,
+    dmp_inject, dmp_zeros
 )
 
 from sympy.polys.densearith import (
@@ -31,18 +33,18 @@ from sympy.polys.densearith import (
     dup_mul_ground, dmp_mul_ground,
     dup_quo_ground, dmp_quo_ground,
     dup_exquo_ground, dmp_exquo_ground,
-    dup_max_norm, dmp_max_norm,
+    dup_max_norm, dmp_max_norm
 )
 
 from sympy.polys.galoistools import (
-    gf_int, gf_crt,
+    gf_int, gf_crt
 )
 
 from sympy.polys.polyerrors import (
     HeuristicGCDFailed,
     HomomorphismFailed,
     NotInvertible,
-    DomainError,
+    DomainError
 )
 
 from sympy.ntheory import nextprime
@@ -59,30 +61,36 @@ def dup_ground_to_ring(f, K0, K1):
     else:
         return common, dup_mul_ground(f, common, K0)
 
+@cython.locals(v=cython.int, w=cython.int)
+def _rec_ground_to_ring(g, v, K0, K1):
+    """XXX"""
+    common = K1.one
+
+    if not v:
+        for c in g:
+            common = K1.lcm(common, K0.denom(c))
+    else:
+        w = v-1
+
+        for c in g:
+            common = K1.lcm(common, _rec_ground_to_ring(c, w, K0, K1))
+
+    return common
+
+@cython.locals(u=cython.int)
 def dmp_ground_to_ring(f, u, K0, K1):
     """Clear denominators, i.e. transform `K_0` to `K_1`, but don't normalize. """
     if not u:
         return dup_ground_to_ring(f, K0, K1)
 
-    def rec_ground_to_ring(g, v):
-        common = K1.one
-
-        if not v:
-            for c in g:
-                common = K1.lcm(common, K0.denom(c))
-        else:
-            for c in g:
-                common = K1.lcm(common, rec_ground_to_ring(c, v-1))
-
-        return common
-
-    common = rec_ground_to_ring(f, u)
+    common = _rec_ground_to_ring(f, u, K0, K1)
 
     if not K1.is_one(common):
         f = dmp_mul_ground(f, common, u, K0)
 
     return common, f
 
+@cython.locals(m=cython.int, n=cython.int, i=cython.int, j=cython.int)
 def dup_integrate(f, m, K):
     """Computes indefinite integral of `f` in `K[x]`. """
     if m <= 0 or not f:
@@ -96,10 +104,12 @@ def dup_integrate(f, m, K):
         for j in xrange(1, m):
             n *= i+j+1
 
-        g.insert(0, K.quo(c, n))
+        g.insert(0, K.quo(c, K(n)))
 
     return g
 
+@cython.locals(m=cython.int, u=cython.int, v=cython.int,
+               n=cython.int, i=cython.int, j=cython.int)
 def dmp_integrate(f, m, u, K):
     """Computes indefinite integral of `f` in `x_0` in `K[X]`. """
     if not u:
@@ -108,7 +118,7 @@ def dmp_integrate(f, m, u, K):
     if m <= 0 or dmp_zero_p(f, u):
         return f
 
-    g = dmp_zeros(m, u-1, K)
+    g, v = dmp_zeros(m, u-1, K), u-1
 
     for i, c in enumerate(reversed(f)):
         n = i+1
@@ -116,23 +126,30 @@ def dmp_integrate(f, m, u, K):
         for j in xrange(1, m):
             n *= i+j+1
 
-        g.insert(0, dmp_quo_ground(c, K(n), u-1, K))
+        g.insert(0, dmp_quo_ground(c, K(n), v, K))
 
     return g
 
+@cython.locals(m=cython.int, v=cython.int, w=cython.int,
+               i=cython.int, j=cython.int)
+def _rec_integrate_in(g, m, v, i, j, K):
+    """XXX"""
+    if i == j:
+        return dmp_integrate(g, m, v, K)
+
+    w, i = v-1, i+1
+
+    return dmp_strip([ _rec_integrate_in(c, m, w, i, j, K) for c in g ], v)
+
+@cython.locals(m=cython.int, j=cython.int, u=cython.int)
 def dmp_integrate_in(f, m, j, u, K):
     """Computes indefinite integral of `f` in `x_j` in `K[X]`. """
     if j < 0 or j > u:
         raise IndexError("-%s <= j < %s expected, got %s" % (u, u, j))
 
-    def rec_integrate_in(g, v, i):
-        if i == j:
-            return dmp_integrate(g, m, v, K)
-        else:
-            return dmp_strip([ rec_integrate_in(c, v-1, i+1) for c in g ], v)
+    return _rec_integrate_in(f, m, u, 0, j, K)
 
-    return rec_integrate_in(f, u, 0)
-
+@cython.locals(m=cython.int, n=cython.int, i=cython.int)
 def dup_diff(f, m, K):
     """m-th order derivative of a polynomial in `K[x]`. """
     if m <= 0:
@@ -146,14 +163,15 @@ def dup_diff(f, m, K):
     deriv, c = [], K.one
 
     for i in xrange(0, m):
-        c, n = c*n, n-1
+        c, n = c*K(n), n-1
 
     for coeff in f[:-m]:
         deriv.append(coeff*c)
-        c, n = n*K.exquo(c, n+m), n-1
+        c, n = K(n)*K.exquo(c, K(n+m)), n-1
 
     return deriv
 
+@cython.locals(u=cython.int, v=cython.int, m=cython.int, n=cython.int, i=cython.int)
 def dmp_diff(f, m, u, K):
     """m-th order derivative in `x_0` of a polynomial in `K[X]`. """
     if not u:
@@ -169,27 +187,33 @@ def dmp_diff(f, m, u, K):
     deriv, c, v = [], K.one, u-1
 
     for i in xrange(0, m):
-        c, n = c*n, n-1
+        c, n = c*K(n), n-1
 
     for coeff in f[:-m]:
         h = dmp_mul_ground(coeff, c, v, K)
-        c, n = n*K.exquo(c, n+m), n-1
+        c, n = K(n)*K.exquo(c, K(n+m)), n-1
         deriv.append(h)
 
     return deriv
 
+@cython.locals(m=cython.int, v=cython.int, w=cython.int,
+               i=cython.int, j=cython.int)
+def _rec_diff_in(g, m, v, i, j, K):
+    """XXX"""
+    if i == j:
+        return dmp_diff(g, m, v, K)
+
+    w, i = v-1, i+1
+
+    return dmp_strip([ _rec_diff_in(c, m, w, i, j, K) for c in g ], v)
+
+@cython.locals(m=cython.int, j=cython.int, u=cython.int)
 def dmp_diff_in(f, m, j, u, K):
     """m-th order derivative in `x_j` of a polynomial in `K[X]`. """
     if j < 0 or j > u:
         raise IndexError("-%s <= j < %s expected, got %s" % (u, u, j))
 
-    def rec_diff_in(g, v, i):
-        if i == j:
-            return dmp_diff(g, m, v, K)
-        else:
-            return dmp_strip([ rec_diff_in(c, v-1, i+1) for c in g ], v)
-
-    return rec_diff_in(f, u, 0)
+    return _rec_diff_in(f, m, u, 0, j, K)
 
 def dup_eval(f, a, K):
     """Evaluate a polynomial at `x = a` in `K[x]` using Horner scheme. """
@@ -204,6 +228,7 @@ def dup_eval(f, a, K):
 
     return result
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_eval(f, a, u, K):
     """Evaluate a polynomial at `x_0 = a` in `K[X]` using Horner scheme. """
     if not u:
@@ -220,62 +245,72 @@ def dmp_eval(f, a, u, K):
 
     return result
 
+@cython.locals(v=cython.int, i=cython.int, j=cython.int)
+def _rec_eval_in(g, a, v, i, j, K):
+    """XXX"""
+    if i == j:
+        return dmp_eval(g, a, v, K)
+
+    v, i = v-1, i+1
+
+    return dmp_strip([ _rec_eval_in(c, a, v, i, j, K) for c in g ], v)
+
+@cython.locals(u=cython.int)
 def dmp_eval_in(f, a, j, u, K):
     """Evaluate a polynomial at `x_j = a` in `K[X]` using Horner scheme. """
     if j < 0 or j > u:
         raise IndexError("-%s <= j < %s expected, got %s" % (u, u, j))
 
-    def rec_eval_in(g, v, i):
-        if i == j:
-            return dmp_eval(g, a, v, K)
+    return _rec_eval_in(f, a, u, 0, j, K)
+
+@cython.locals(i=cython.int, u=cython.int)
+def _rec_eval_tail(g, i, A, u, K):
+    """XXX"""
+    if i == u:
+        return dup_eval(g, A[-1], K)
+    else:
+        h = [ _rec_eval_tail(c, i+1, A, u, K) for c in g ]
+
+        if i < u - len(A) + 1:
+            return h
         else:
-            return dmp_strip([ rec_eval_in(c, v-1, i+1) for c in g ], v-1)
+            return dup_eval(h, A[-u+i-1], K)
 
-    return rec_eval_in(f, u, 0)
-
+@cython.locals(u=cython.int)
 def dmp_eval_tail(f, A, u, K):
     """Evaluate a polynomial at `x_j = a_j, ...` in `K[X]`. """
-    def rec_eval_tail(g, i):
-        if i == u:
-            return dup_eval(g, A[-1], K)
-        else:
-            h = [ rec_eval_tail(c, i+1) for c in g ]
-
-            if i < u - len(A) + 1:
-                return h
-            else:
-                return dup_eval(h, A[-u+i-1], K)
-
     if not A:
         return f
 
     if dmp_zero_p(f, u):
         return dmp_zero(u - len(A))
 
-    e = rec_eval_tail(f, 0)
+    e = _rec_eval_tail(f, 0, A, u, K)
 
     if u == len(A)-1:
         return e
     else:
         return dmp_strip(e, u - len(A))
 
+@cython.locals(m=cython.int, v=cython.int, i=cython.int, j=cython.int)
+def _rec_diff_eval(g, m, a, v, i, j, K):
+    """XXX"""
+    if i == j:
+        return dmp_eval(dmp_diff(g, m, v, K), a, v, K)
+
+    v, i = v-1, i+1
+
+    return dmp_strip([ _rec_diff_eval(c, m, a, v, i, j, K) for c in g ], v)
+
+@cython.locals(m=cython.int, j=cython.int, u=cython.int)
 def dmp_diff_eval_in(f, m, a, j, u, K):
     """Differentiate and evaluate a polynomial in `x_j` at `a` in `K[X]`. """
-    if j < 0:
-        j += u + 1
-
     if j > u:
         raise IndexError("-%s <= j < %s expected, got %s" % (u, u, j))
     if not j:
         return dmp_eval(dmp_diff(f, m, u, K), a, u, K)
 
-    def rec_diff_eval(g, v, i):
-        if i == j:
-            return dmp_eval(dmp_diff(g, m, v, K), a, v, K)
-        else:
-            return dmp_strip([ rec_diff_eval(c, v-1, i+1) for c in g ], v-1)
-
-    return rec_diff_eval(f, u, 0)
+    return _rec_diff_eval(f, m, a, u, 0, j, K)
 
 def dup_half_gcdex(f, g, K):
     """Half extended Euclidean algorithm in `F[x]`. """
@@ -312,6 +347,7 @@ def dup_invert(f, g, K):
     else:
         raise NotInvertible("zero divisor")
 
+@cython.locals(n=cython.int, m=cython.int, d=cython.int, k=cython.int)
 def dup_inner_subresultants(f, g, K):
     """Subresultant PRS algorithm in `K[x]`. """
     n = dup_degree(f)
@@ -363,6 +399,8 @@ def dup_subresultants(f, g, K):
     """Computes subresultant PRS of two polynomials in `K[x]`. """
     return dup_inner_subresultants(f, g, K)[0]
 
+@cython.locals(s=cython.int, i=cython.int, du=cython.int,
+               dv=cython.int, dw=cython.int)
 def dup_prs_resultant(f, g, K):
     """Resultant algorithm in `K[x]` using subresultant PRS. """
     if not f or not g:
@@ -394,9 +432,9 @@ def dup_prs_resultant(f, g, K):
     if s < 0:
         p = -p
 
-    j = dup_degree(R[-2])
+    i = dup_degree(R[-2])
 
-    res = dup_LC(R[-1], K)**j
+    res = dup_LC(R[-1], K)**i
     res = K.quo(res*p, q)
 
     return res, R
@@ -405,6 +443,8 @@ def dup_resultant(f, g, K):
     """Computes resultant of two polynomials in `K[x]`. """
     return dup_prs_resultant(f, g, K)[0]
 
+@cython.locals(u=cython.int, v=cython.int, n=cython.int,
+               m=cython.int, d=cython.int, k=cython.int)
 def dmp_inner_subresultants(f, g, u, K):
     """Subresultant PRS algorithm in `K[X]`. """
     if not u:
@@ -459,10 +499,13 @@ def dmp_inner_subresultants(f, g, u, K):
 
     return R, B, D
 
+@cython.locals(u=cython.int)
 def dmp_subresultants(f, g, u, K):
     """Computes subresultant PRS of two polynomials in `K[X]`. """
     return dmp_inner_subresultants(f, g, u, K)[0]
 
+@cython.locals(u=cython.int, v=cython.int, s=cython.int, i=cython.int,
+               d=cython.int, du=cython.int, dv=cython.int, dw=cython.int)
 def dmp_prs_resultant(f, g, u, K):
     """Resultant algorithm in `K[X]` using subresultant PRS. """
     if not u:
@@ -502,13 +545,15 @@ def dmp_prs_resultant(f, g, u, K):
     if s < 0:
         p = dmp_neg(p, v, K)
 
-    j = dmp_degree(R[-2], u)
+    i = dmp_degree(R[-2], u)
 
-    res = dmp_pow(dmp_LC(R[-1], K), j, v, K)
+    res = dmp_pow(dmp_LC(R[-1], K), i, v, K)
     res = dmp_quo(dmp_mul(res, p, v, K), q, v, K)
 
     return res, R
 
+@cython.locals(u=cython.int, v=cython.int, n=cython.int, m=cython.int,
+               N=cython.int, M=cython.int, B=cython.int)
 def dmp_zz_modular_resultant(f, g, p, u, K):
     """Compute resultant of `f` and `g` modulo a prime `p`. """
     if not u:
@@ -566,10 +611,13 @@ def dmp_zz_modular_resultant(f, g, p, u, K):
 
     return r
 
+def _collins_crt(r, R, P, p, K):
+    """Wrapper of CRT for Collins's resultant algorithm. """
+    return gf_int(gf_crt([r, R], [P, p], K), P*p)
+
+@cython.locals(u=cython.int, v=cython.int, n=cython.int, m=cython.int)
 def dmp_zz_collins_resultant(f, g, u, K):
     """Collins's modular resultant algorithm in `Z[X]`. """
-    def crt(r, R, P, p):
-        return gf_int(gf_crt([r, R], [P, p], K), P*p)
 
     n = dmp_degree(f, u)
     m = dmp_degree(g, u)
@@ -605,12 +653,13 @@ def dmp_zz_collins_resultant(f, g, u, K):
         if K.is_one(P):
             r = R
         else:
-            r = dmp_apply_pairs(r, R, crt, (P, p), v, K)
+            r = dmp_apply_pairs(r, R, _collins_crt, (P, p, K), v, K)
 
         P *= p
 
     return r
 
+@cython.locals(u=cython.int, n=cython.int, m=cython.int)
 def dmp_qq_collins_resultant(f, g, u, K0):
     """Collins's modular resultant algorithm in `Q[X]`. """
     n = dmp_degree(f, u)
@@ -636,6 +685,7 @@ def dmp_qq_collins_resultant(f, g, u, K0):
 
 USE_COLLINS_RESULTANT = 0
 
+@cython.locals(u=cython.int)
 def dmp_resultant(f, g, u, K):
     """Computes resultant of two polynomials in `K[X]`. """
     if not u:
@@ -650,6 +700,7 @@ def dmp_resultant(f, g, u, K):
 
     return dmp_prs_resultant(f, g, u, K)[0]
 
+@cython.locals(d=cython.int, s=cython.int)
 def dup_discriminant(f, K):
     """Computes discriminant of a polynomial in `K[x]`. """
     d = dup_degree(f)
@@ -662,8 +713,9 @@ def dup_discriminant(f, K):
 
         r = dup_resultant(f, dup_diff(f, 1, K), K)
 
-        return K.quo(r, c*s)
+        return K.quo(r, c*K(s))
 
+@cython.locals(u=cython.int, v=cython.int, d=cython.int, s=cython.int)
 def dmp_discriminant(f, u, K):
     """Computes discriminant of a polynomial in `K[X]`. """
     if not u:
@@ -678,7 +730,7 @@ def dmp_discriminant(f, u, K):
         c = dmp_LC(f, K)
 
         r = dmp_resultant(f, dmp_diff(f, 1, u, K), u, K)
-        c = dmp_mul_ground(c, s, v, K)
+        c = dmp_mul_ground(c, K(s), v, K)
 
         return dmp_quo(r, c, v, K)
 
@@ -712,6 +764,7 @@ def _dup_ff_trivial_gcd(f, g, K):
 
 USE_DMP_SIMPLIFY_GCD = 1
 
+@cython.locals(u=cython.int)
 def _dmp_rr_trivial_gcd(f, g, u, K):
     """Handle trivial cases in GCD algorithm over a ring. """
     zero_f = dmp_zero_p(f, u)
@@ -734,6 +787,7 @@ def _dmp_rr_trivial_gcd(f, g, u, K):
     else:
         return None
 
+@cython.locals(u=cython.int)
 def _dmp_ff_trivial_gcd(f, g, u, K):
     """Handle trivial cases in GCD algorithm over a field. """
     zero_f = dmp_zero_p(f, u)
@@ -754,6 +808,8 @@ def _dmp_ff_trivial_gcd(f, g, u, K):
     else:
         return None
 
+@cython.locals(u=cython.int, v=cython.int,
+               df=cython.int, dg=cython.int)
 def _dmp_simplify_gcd(f, g, u, K):
     """Try to eliminate `x_0` from GCD computation in `K[X]`. """
     df = dmp_degree(f, u)
@@ -821,6 +877,7 @@ def dup_ff_prs_gcd(f, g, K):
 
     return h, cff, cfg
 
+@cython.locals(u=cython.int)
 def dmp_rr_prs_gcd(f, g, u, K):
     """Computes polynomial GCD using subresultants over a ring. """
     if not u:
@@ -848,6 +905,7 @@ def dmp_rr_prs_gcd(f, g, u, K):
 
     return h, cff, cfg
 
+@cython.locals(u=cython.int)
 def dmp_ff_prs_gcd(f, g, u, K):
     """Computes polynomial GCD using subresultants over a field. """
     if not u:
@@ -875,6 +933,22 @@ def dmp_ff_prs_gcd(f, g, u, K):
 
 HEU_GCD_MAX = 6
 
+def _dup_zz_gcd_interpolate(h, x, K):
+    """Interpolate polynomial GCD from integer GCD. """
+    f = []
+
+    while h:
+        g = h % x
+
+        if g > x // 2:
+            g -= x
+
+        f.insert(0, g)
+        h = (h-g) // x
+
+    return f
+
+@cython.locals(i=cython.int, df=cython.int, dg=cython.int)
 def dup_zz_heu_gcd(f, g, K):
     """Heuristic polynomial GCD in `Z[x]`.
 
@@ -907,24 +981,6 @@ def dup_zz_heu_gcd(f, g, K):
     if result is not None:
         return result
 
-    def interpolate(h, x):
-        f = []
-
-        while h:
-            g = h % x
-
-            if g > x // 2:
-                g -= x
-
-            f.insert(0, g)
-            h = (h-g) // x
-
-        return f
-
-    def finalize(h, cff, cfg, gcd):
-        h = dup_mul_ground(h, gcd, K)
-        return h, cff, cfg
-
     df = dup_degree(f)
     dg = dup_degree(g)
 
@@ -952,7 +1008,7 @@ def dup_zz_heu_gcd(f, g, K):
             cff = ff // h
             cfg = gg // h
 
-            h = interpolate(h, x)
+            h = _dup_zz_gcd_interpolate(h, x, K)
             h = dup_primitive(h, K)[1]
 
             cff_, r = dup_div(f, h, K)
@@ -961,9 +1017,10 @@ def dup_zz_heu_gcd(f, g, K):
                 cfg_, r = dup_div(g, h, K)
 
                 if not r:
-                    return finalize(h, cff_, cfg_, gcd)
+                    h = dup_mul_ground(h, gcd, K)
+                    return h, cff_, cfg_
 
-            cff = interpolate(cff, x)
+            cff = _dup_zz_gcd_interpolate(cff, x, K)
 
             h, r = dup_div(f, cff, K)
 
@@ -971,9 +1028,10 @@ def dup_zz_heu_gcd(f, g, K):
                 cfg_, r = dup_div(g, h, K)
 
                 if not r:
-                    return finalize(h, cff, cfg_, gcd)
+                    h = dup_mul_ground(h, gcd, K)
+                    return h, cff, cfg_
 
-            cfg = interpolate(cfg, x)
+            cfg = _dup_zz_gcd_interpolate(cfg, x, K)
 
             h, r = dup_div(g, cfg, K)
 
@@ -981,12 +1039,32 @@ def dup_zz_heu_gcd(f, g, K):
                 cff_, r = dup_div(f, h, K)
 
                 if not r:
-                    return finalize(h, cff_, cfg, gcd)
+                    h = dup_mul_ground(h, gcd, K)
+                    return h, cff, cfg
 
         x = 73794*x * K.sqrt(K.sqrt(x)) // 27011
 
     raise HeuristicGCDFailed('no luck')
 
+@cython.locals(v=cython.int)
+def _dmp_zz_gcd_interpolate(h, x, v, K):
+    """Interpolate polynomial GCD from integer GCD. """
+    f = []
+
+    while not dmp_zero_p(h, v):
+        g = dmp_ground_trunc(h, x, v, K)
+        f.insert(0, g)
+
+        h = dmp_sub(h, g, v, K)
+        h = dmp_exquo_ground(h, x, v, K)
+
+    if K.is_negative(dmp_ground_LC(f, v+1, K)):
+        return dmp_neg(f, v+1, K)
+    else:
+        return f
+
+@cython.locals(u=cython.int, v=cython.int, i=cython.int,
+               dg=cython.int, df=cython.int)
 def dmp_zz_heu_gcd(f, g, u, K):
     """Heuristic polynomial GCD in `Z[X]`.
 
@@ -1024,25 +1102,6 @@ def dmp_zz_heu_gcd(f, g, u, K):
     if result is not None:
         return result
 
-    def interpolate(h, x, v):
-        f = []
-
-        while not dmp_zero_p(h, v):
-            g = dmp_ground_trunc(h, x, v, K)
-            f.insert(0, g)
-
-            h = dmp_sub(h, g, v, K)
-            h = dmp_exquo_ground(h, x, v, K)
-
-        if K.is_negative(dmp_ground_LC(f, v+1, K)):
-            return dmp_neg(f, v+1, K)
-        else:
-            return f
-
-    def finalize(h, cff, cfg, gcd):
-        h = dmp_mul_ground(h, gcd, u, K)
-        return h, cff, cfg
-
     df = dmp_degree(f, u)
     dg = dmp_degree(g, u)
 
@@ -1066,7 +1125,7 @@ def dmp_zz_heu_gcd(f, g, u, K):
         if not (dmp_zero_p(ff, v) or dmp_zero_p(gg, v)):
             h, cff, cfg = dmp_zz_heu_gcd(ff, gg, v, K)
 
-            h = interpolate(h, x, v)
+            h = _dmp_zz_gcd_interpolate(h, x, v, K)
             h = dmp_ground_primitive(h, u, K)[1]
 
             cff_, r = dmp_div(f, h, u, K)
@@ -1075,9 +1134,10 @@ def dmp_zz_heu_gcd(f, g, u, K):
                 cfg_, r = dmp_div(g, h, u, K)
 
                 if dmp_zero_p(r, u):
-                    return finalize(h, cff_, cfg_, gcd)
+                    h = dmp_mul_ground(h, gcd, u, K)
+                    return h, cff_, cfg_
 
-            cff = interpolate(cff, x, v)
+            cff = _dmp_zz_gcd_interpolate(cff, x, v, K)
 
             h, r = dmp_div(f, cff, u, K)
 
@@ -1085,9 +1145,10 @@ def dmp_zz_heu_gcd(f, g, u, K):
                 cfg_, r = dmp_div(g, h, u, K)
 
                 if dmp_zero_p(r, u):
-                    return finalize(h, cff, cfg_, gcd)
+                    h = dmp_mul_ground(h, gcd, u, K)
+                    return h, cff, cfg_
 
-            cfg = interpolate(cfg, x, v)
+            cfg = _dmp_zz_gcd_interpolate(cfg, x, v, K)
 
             h, r = dmp_div(g, cfg, u, K)
 
@@ -1095,7 +1156,8 @@ def dmp_zz_heu_gcd(f, g, u, K):
                 cff_, r = dmp_div(f, h, u, K)
 
                 if dmp_zero_p(r, u):
-                    return finalize(h, cff_, cfg, gcd)
+                    h = dmp_mul_ground(h, gcd, u, K)
+                    return h, cff_, cfg
 
         x = 73794*x * K.sqrt(K.sqrt(x)) // 27011
 
@@ -1131,6 +1193,7 @@ def dup_qq_heu_gcd(f, g, K0):
 
     return h, cff, cfg
 
+@cython.locals(u=cython.int)
 def dmp_qq_heu_gcd(f, g, u, K0):
     """Heuristic polynomial GCD in `Q[X]`. """
     result = _dmp_ff_trivial_gcd(f, g, u, K0)
@@ -1185,6 +1248,7 @@ def dup_inner_gcd(f, g, K):
 
         return dup_rr_prs_gcd(f, g, K)
 
+@cython.locals(u=cython.int)
 def _dmp_inner_gcd(f, g, u, K):
     """Helper function for `dmp_inner_gcd()`. """
     if K.has_Field:
@@ -1206,6 +1270,7 @@ def _dmp_inner_gcd(f, g, u, K):
 
         return dmp_rr_prs_gcd(f, g, u, K)
 
+@cython.locals(u=cython.int)
 def dmp_inner_gcd(f, g, u, K):
     """Computes polynomial GCD and cofactors of `f` and `g` in `K[X]`. """
     if not u:
@@ -1222,6 +1287,7 @@ def dup_gcd(f, g, K):
     """Computes polynomial GCD of `f` and `g` in `K[x]`. """
     return dup_inner_gcd(f, g, K)[0]
 
+@cython.locals(u=cython.int)
 def dmp_gcd(f, g, u, K):
     """Computes polynomial GCD of `f` and `g` in `K[X]`. """
     return dmp_inner_gcd(f, g, u, K)[0]
@@ -1243,7 +1309,7 @@ def dup_ff_lcm(f, g, K):
     h = dup_exquo(dup_mul(f, g, K),
                   dup_gcd(f, g, K), K)
 
-    return dup_ground_monic(h, K)
+    return dup_monic(h, K)
 
 def dup_lcm(f, g, K):
     """Computes polynomial LCM of `f` and `g` in `K[x]`. """
@@ -1252,6 +1318,7 @@ def dup_lcm(f, g, K):
     else:
         return dup_rr_lcm(f, g, K)
 
+@cython.locals(u=cython.int)
 def dmp_rr_lcm(f, g, u, K):
     """Computes polynomial LCM over a ring in `K[X]`. """
     fc, f = dmp_ground_primitive(f, u, K)
@@ -1264,6 +1331,7 @@ def dmp_rr_lcm(f, g, u, K):
 
     return dmp_mul_ground(h, c, u, K)
 
+@cython.locals(u=cython.int)
 def dmp_ff_lcm(f, g, u, K):
     """Computes polynomial LCM over a field in `K[X]`. """
     h = dmp_exquo(dmp_mul(f, g, u, K),
@@ -1271,6 +1339,7 @@ def dmp_ff_lcm(f, g, u, K):
 
     return dmp_ground_monic(h, u, K)
 
+@cython.locals(u=cython.int)
 def dmp_lcm(f, g, u, K):
     """Computes polynomial LCM of `f` and `g` in `K[X]`. """
     if not u:
@@ -1298,16 +1367,20 @@ def dup_trunc(f, p, K):
 
     return dup_strip(g)
 
+@cython.locals(u=cython.int)
 def dmp_trunc(f, p, u, K):
     """Reduce `K[X]` polynomial modulo a polynomial `p` in `K[Y]`. """
     return dmp_strip([ dmp_rem(c, p, u-1, K) for c in f ], u)
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_ground_trunc(f, p, u, K):
     """Reduce `K[X]` polynomial modulo a constant `p` in `K`. """
     if not u:
         return dup_trunc(f, p, K)
-    else:
-        return dmp_strip([ dmp_ground_trunc(c, p, u-1, K) for c in f ], u)
+
+    v = u-1
+
+    return dmp_strip([ dmp_ground_trunc(c, p, v, K) for c in f ], u)
 
 def dup_monic(f, K):
     """Divides all coefficients by `LC(f)` in `K[x]`. """
@@ -1321,6 +1394,7 @@ def dup_monic(f, K):
     else:
         return dup_quo_ground(f, lc, K)
 
+@cython.locals(u=cython.int)
 def dmp_ground_monic(f, u, K):
     """Divides all coefficients by `LC(f)` in `K[X]`. """
     if not u:
@@ -1362,6 +1436,7 @@ def dup_content(f, K):
     else:
         return dup_rr_content(f, K)
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_content(f, u, K):
     """Returns GCD of multivariate coefficients. """
     cont, v = dmp_LC(f, K), u-1
@@ -1380,6 +1455,7 @@ def dmp_content(f, u, K):
     else:
         return cont
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_rr_ground_content(f, u, K):
     """Returns GCD of coefficients over a ring. """
     if not u:
@@ -1396,6 +1472,7 @@ def dmp_rr_ground_content(f, u, K):
 
     return cont
 
+@cython.locals(u=cython.int)
 def dmp_ff_ground_content(f, u, K):
     """Returns GCD of coefficients over a field. """
     if not f:
@@ -1403,6 +1480,7 @@ def dmp_ff_ground_content(f, u, K):
     else:
         return K.one
 
+@cython.locals(u=cython.int)
 def dmp_ground_content(f, u, K):
     """Returns GCD of coefficients in `K[X]`. """
     if not u:
@@ -1433,6 +1511,7 @@ def dup_primitive(f, K):
     else:
         return dup_rr_primitive(f, K)
 
+@cython.locals(u=cython.int, v=cython.int)
 def dmp_primitive(f, u, K):
     """Returns multivariate content and a primitive polynomial. """
     cont, v = dmp_content(f, u, K), u-1
@@ -1442,6 +1521,7 @@ def dmp_primitive(f, u, K):
     else:
         return cont, [ dmp_exquo(c, cont, v, K) for c in f ]
 
+@cython.locals(u=cython.int)
 def dmp_rr_ground_primitive(f, u, K):
     """Returns content and a primitive polynomial over a ring. """
     cont = dmp_ground_content(f, u, K)
@@ -1451,6 +1531,7 @@ def dmp_rr_ground_primitive(f, u, K):
     else:
         return cont, dmp_exquo_ground(f, cont, u, K)
 
+@cython.locals(u=cython.int)
 def dmp_ff_ground_primitive(f, u, K):
     """Returns content and a primitive polynomial over a ring. """
     if dmp_zero_p(f, u):
@@ -1458,6 +1539,7 @@ def dmp_ff_ground_primitive(f, u, K):
     else:
         return K.one, f
 
+@cython.locals(u=cython.int)
 def dmp_ground_primitive(f, u, K):
     """Returns content and a primitive polynomial in `K[x]`. """
     if not u:
@@ -1478,6 +1560,7 @@ def dup_sqf_p(f, K):
     else:
         return not dup_degree(dup_gcd(f, dup_diff(f, 1, K), K))
 
+@cython.locals(u=cython.int)
 def dmp_sqf_p(f, u, K):
     """Returns `True` if `f` is a square-free polynomial in `K[X]`. """
     if dmp_zero_p(f, u):
@@ -1518,6 +1601,7 @@ def dup_sqf_part(f, K):
     else:
         return dup_primitive(sqf, K)[1]
 
+@cython.locals(u=cython.int)
 def dmp_sqf_part(f, u, K):
     """Returns square-free part of a polynomial in `K[X]`. """
     if dmp_zero_p(f, u):
@@ -1534,6 +1618,7 @@ def dmp_sqf_part(f, u, K):
     else:
         return dmp_primitive(sqf, u, K)[1]
 
+@cython.locals(i=cython.int)
 def dup_sqf_list(f, K, **args):
     """Returns square-free decomposition of a polynomial in `K[x]`. """
     if K.has_Field:
@@ -1582,6 +1667,7 @@ def dup_sqf_list(f, K, **args):
 
         return [(g, i)] + rest
 
+@cython.locals(u=cython.int, i=cython.int)
 def dmp_sqf_list(f, u, K, **args):
     """Returns square-free decomposition of a polynomial in `K[X]`. """
     if not u:
@@ -1646,6 +1732,7 @@ def dup_extract(f, g, K):
 
     return gcd, f, g
 
+@cython.locals(u=cython.int)
 def dmp_ground_extract(f, g, u, K):
     """Extracts common content from a pair of polynomials in `K[X]`. """
     fc = dmp_ground_content(f, u, K)
@@ -1675,6 +1762,71 @@ def dup_compose(f, g, K):
 
     return h
 
+@cython.locals(s=cython.int, n=cython.int, r=cython.int,
+               i=cython.int, j=cython.int)
+def _dup_right_decompose(f, s, K):
+    """XXX"""
+    n = dup_degree(f)
+    lc = dup_LC(f, K)
+
+    f = dup_to_raw_dict(f)
+    g = { s : K.one }
+
+    r = n // s
+
+    for i in xrange(1, s):
+        coeff = K.zero
+
+        for j in xrange(0, i):
+            if not n+j-i in f:
+                continue
+
+            if not s-j in g:
+                continue
+
+            fc, gc = f[n+j-i], g[s-j]
+            coeff += (i - r*j)*fc*gc
+
+        g[s-i] = K.quo(coeff, i*r*lc)
+
+    return dup_from_raw_dict(g, K)
+
+@cython.locals(i=cython.int)
+def _dup_left_decompose(f, h, K):
+    """XXX"""
+    g, i = {}, 0
+
+    while f:
+        q, r = dup_div(f, h, K)
+
+        if dup_degree(r) > 0:
+            return None
+        else:
+            g[i] = dup_LC(r, K)
+            f, i = q, i + 1
+
+    return dup_from_raw_dict(g, K)
+
+
+@cython.locals(df=cython.int, s=cython.int)
+def _dup_decompose(f, K):
+    """XXX"""
+    df = dup_degree(f)
+
+    for s in xrange(2, df):
+        if df % s != 0:
+            continue
+
+        h = _dup_right_decompose(f, s, K)
+
+        if h is not None:
+            g = _dup_left_decompose(f, h, K)
+
+            if g is not None:
+                return g, h
+
+    return None
+
 def dup_decompose(f, K):
     """Computes functional decomposition of `f` in `K[x]`.
 
@@ -1702,67 +1854,10 @@ def dup_decompose(f, K):
           Journal of Symbolic Computation 7 (1989), pp. 445-456
 
     """
-    def right_decompose(f, s):
-        n = dup_degree(f)
-        lc = dup_LC(f, K)
-
-        f = dup_to_raw_dict(f)
-        g = { s : K.one }
-
-        r = n // s
-
-        for i in xrange(1, s):
-            coeff = K.zero
-
-            for j in xrange(0, i):
-                if not n+j-i in f:
-                    continue
-
-                if not s-j in g:
-                    continue
-
-                fc, gc = f[n+j-i], g[s-j]
-                coeff += (i - r*j)*fc*gc
-
-            g[s-i] = K.quo(coeff, i*r*lc)
-
-        return dup_from_raw_dict(g, K)
-
-    def left_decompose(f, h):
-        g, i = {}, 0
-
-        while f:
-            q, r = dup_div(f, h, K)
-
-            if dup_degree(r) > 0:
-                return None
-            else:
-                g[i] = dup_LC(r, K)
-                f, i = q, i + 1
-
-        return dup_from_raw_dict(g, K)
-
-    def decompose(f):
-        df = dup_degree(f)
-
-        for s in xrange(2, df):
-            if df % s != 0:
-                continue
-
-            h = right_decompose(f, s)
-
-            if h is not None:
-                g = left_decompose(f, h)
-
-                if g is not None:
-                    return g, h
-
-        return None
-
     F = []
 
     while True:
-        result = decompose(f)
+        result = _dup_decompose(f, K)
 
         if result is not None:
             f, h = result
