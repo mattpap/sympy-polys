@@ -19,3 +19,5 @@ from runtests import test, doctest
 
 from pytest import raises
 
+from cythonutils import cythonized
+
