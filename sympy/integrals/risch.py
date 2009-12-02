@@ -16,7 +16,7 @@ from sympy.solvers import solve
 from sympy.simplify import simplify, together
 from sympy.polys import Poly, quo, gcd, lcm, \
     monomials, factor, PolynomialError
-from sympy.polys.rootfinding import root_factors
+from sympy.polys.polyroots import root_factors
 
 from sympy.utilities.iterables import make_list
 
