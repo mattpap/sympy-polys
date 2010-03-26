@@ -1,6 +1,7 @@
 from sympy.utilities.pytest import XFAIL
 from sympy import (symbols, lambdify, sqrt, sin, cos, pi, atan, Rational, Real,
         Matrix, Lambda, exp, Integral, oo)
+from sympy.printing.lambdarepr import LambdaPrinter
 from sympy import mpmath
 import math, sympy
 
@@ -222,3 +223,28 @@ def test_integral():
     f = Lambda(x, exp(-x**2))
     l = lambdify(x, Integral(f(x), (x, -oo, oo)), modules="sympy")
     assert l(x) == Integral(exp(-x**2), (x, -oo, oo))
+
+#================== Test special printers ==========================
+def test_special_printers():
+    class IntervalPrinter(LambdaPrinter):
+        """Use ``lambda`` printer but print numbers as ``mpi`` intervals. """
+
+        def _print_Integer(self, expr):
+            return "mpi('%s')" % super(IntervalPrinter, self)._print_Integer(expr)
+
+        def _print_Rational(self, expr):
+            return "mpi('%s')" % super(IntervalPrinter, self)._print_Rational(expr)
+
+    def intervalrepr(expr):
+        return IntervalPrinter().doprint(expr)
+
+    expr = sympy.sqrt(sympy.sqrt(2) + sympy.sqrt(3)) + sympy.S(1)/2
+
+    func0 = lambdify((), expr, modules="mpmath", printer=intervalrepr)
+    func1 = lambdify((), expr, modules="mpmath", printer=IntervalPrinter)
+    func2 = lambdify((), expr, modules="mpmath", printer=IntervalPrinter())
+
+    assert isinstance(func0(), mpmath.mpi)
+    assert isinstance(func1(), mpmath.mpi)
+    assert isinstance(func2(), mpmath.mpi)
+

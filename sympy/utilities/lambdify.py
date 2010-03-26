@@ -6,6 +6,8 @@ lambda functions which can be used to calculate numerical values very fast.
 from __future__ import division
 from sympy.core.sympify import sympify
 
+import inspect
+
 # These are the namespaces the lambda functions will use.
 MATH = {}
 MPMATH = {}
@@ -96,7 +98,7 @@ def _import(module, reload="False"):
     for sympyname, translation in translations.iteritems():
         namespace[sympyname] = namespace[translation]
 
-def lambdify(args, expr, modules=None):
+def lambdify(args, expr, modules=None, printer=None):
     """
     Returns a lambda function for fast calculation of numerical values.
 
@@ -178,7 +180,8 @@ def lambdify(args, expr, modules=None):
         namespace = _get_namespace(modules)
 
     # Create lambda function.
-    lstr = lambdastr(args, expr)
+    lstr = lambdastr(args, expr, printer=printer)
+
     return eval(lstr, namespace)
 
 def _get_namespace(m):
@@ -195,7 +198,7 @@ def _get_namespace(m):
     else:
         raise TypeError("Argument must be either a string, dict or module but it is: %s" % m)
 
-def lambdastr(args, expr):
+def lambdastr(args, expr, printer=None):
     """
     Returns a string that can be evaluated to a lambda function.
 
@@ -207,9 +210,17 @@ def lambdastr(args, expr):
     'lambda x,y,z: ([z, y, x])'
 
     """
-
-    #XXX: This has to be done here because of circular imports
-    from sympy.printing.lambdarepr import lambdarepr
+    if printer is not None:
+        if inspect.isfunction(printer):
+            lambdarepr = printer
+        else:
+            if inspect.isclass(printer):
+                lambdarepr = lambda expr: printer().doprint(expr)
+            else:
+                lambdarepr = lambda expr: printer.doprint(expr)
+    else:
+        #XXX: This has to be done here because of circular imports
+        from sympy.printing.lambdarepr import lambdarepr
 
     # Transform everything to strings.
     expr = lambdarepr(expr)
@@ -221,3 +232,4 @@ def lambdastr(args, expr):
         args = str(args)
 
     return "lambda %s: (%s)" % (args, expr)
+
