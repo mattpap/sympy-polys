@@ -24,7 +24,7 @@ from sympy.polys.polyerrors import (
 )
 
 from sympy.utilities import (
-    any, all, numbered_symbols, variations,
+    any, all, numbered_symbols, variations, lambdify,
 )
 
 from sympy.ntheory import sieve
@@ -492,4 +492,49 @@ class AlgebraicNumber(Basic):
         root    = f.LC()*self.root
 
         return AlgebraicNumber((minpoly, root), self.coeffs())
+
+def isolate(alg, eps=None, fast=False):
+    """Give a rational isolating interval for an algebraic number. """
+    alg = sympify(alg)
+
+    if alg.is_Rational:
+        return (alg, alg)
+    elif not ask(alg, Q.real):
+        raise NotImplementedError("complex algebraic numbers are not supported")
+
+    from sympy.printing.lambdarepr import LambdaPrinter
+
+    class IntervalPrinter(LambdaPrinter):
+        """Use ``lambda`` printer but print numbers as ``mpi`` intervals. """
+
+        def _print_Integer(self, expr):
+            return "mpi('%s')" % super(IntervalPrinter, self)._print_Integer(expr)
+
+        def _print_Rational(self, expr):
+            return "mpi('%s')" % super(IntervalPrinter, self)._print_Rational(expr)
+
+    func = lambdify((), alg, modules="mpmath", printer=IntervalPrinter())
+
+    poly = minpoly(alg, polys=True)
+    intervals = poly.intervals_sqf()
+
+    dps, done = mp.dps, False
+
+    try:
+        while not done:
+            alg = func()
+
+            for a, b in intervals:
+                if a <= alg.a and alg.b <= b:
+                    done = True
+                    break
+            else:
+                mp.dps *= 2
+    finally:
+        mp.dps = dps
+
+    if eps is not None:
+        a, b = poly.refine_root(a, b, eps=eps, fast=fast)
+
+    return (a, b)
 
