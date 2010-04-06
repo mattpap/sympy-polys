@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from sympy import symbols, Symbol, sin, cos, Matrix, Integral, pi, sqrt,\
-        Function, Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I
+from sympy import symbols, Symbol, sin, cos, Matrix, Integral, pi, sqrt, Function, \
+    Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I, RootOf
 from sympy.printing.pretty import pretty, pprint
 
 x,y,k = symbols('xyk')
@@ -407,6 +407,16 @@ u"""\
 """
     assert u == s
 
+def test_upretty_RootOf():
+    u = upretty(RootOf(x**5 + 11*x - 2, 0))
+    s = \
+u"""\
+      ⎛ 5              ⎞
+RootOf⎝x  + 11⋅x - 2, 0⎠\
+"""
+
+    assert u == s
+
 def test_upprint():
     import StringIO, sys
     fd = StringIO.StringIO()
@@ -417,3 +427,4 @@ def test_upprint():
     finally:
         sys.stdout = sso
     assert fd.getvalue() == u'\u03c0\n'
+
