@@ -41,18 +41,20 @@ class StrPrinter(Printer):
         else:
             return str(expr)
 
-    def _print_Add(self, expr):
-        args = list(expr.args)
-
+    def _print_Add(self, expr, order=None):
         # Now we need to sort the factors in Add, which are in "rest". Any
         # ordering is fine, but some ordering looks better and some looks bad.
         # This particular solution is slow, but it ensures a sane ordering. It
         # can of course be improved:
 
-        args.sort(Basic._compare_pretty)
+        if order is None and self.order is None:
+            terms = sorted(expr.args, Basic._compare_pretty)
+        else:
+            terms = [ elt[-1] for elt in self.analyze(expr, order) ]
+
         PREC = precedence(expr)
         l = []
-        for term in args:
+        for term in terms:
             t = self._print(term)
             if t.startswith('-'):
                 sign = "-"
