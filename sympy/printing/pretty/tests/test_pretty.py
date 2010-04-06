@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from sympy import Symbol, Matrix, Integral, log, Rational, Derivative, exp, \
-        sqrt, pi, Function, sin, cos, pprint_use_unicode, oo, Eq, Le, \
-        Gt, Ne, Limit, factorial, gamma, conjugate, I, Piecewise, S, pprint, Pow
+        sqrt, pi, Function, sin, cos, pprint_use_unicode, oo, Eq, Le, Gt, Ne, \
+        Limit, factorial, gamma, conjugate, I, Piecewise, S, pprint, Pow, RootOf
 from sympy.printing.pretty import pretty as xpretty
 
 x = Symbol('x')
@@ -98,6 +98,8 @@ def test_pretty_relational():
             '  x       2\n----- != y \n1 + y      ',
             '  x       2\n----- != y \ny + 1      ']
 
+def test_pretty_RootOf():
+    assert pretty(RootOf(x**5 + 11*x - 2, 0)) == "      / 5              \\\nRootOf\\x  + 11*x - 2, 0/"
 
 def test_pretty_unicode():
     assert xpretty( oo, use_unicode=True ) == u'\u221e'
