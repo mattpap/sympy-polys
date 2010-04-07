@@ -784,6 +784,14 @@ class Lambda(Function):
            #     return True
         return False
 
+    @property
+    def is_identity(self):
+        """Return ``True`` if this ``Lambda`` is an identity function. """
+        if len(self.args) == 2:
+            return self.args[0] == self.args[1]
+        else:
+            return None
+
 @vectorize(0)
 def diff(f, *symbols, **kwargs):
     """
@@ -1074,3 +1082,4 @@ def expand_complex(expr, deep=True):
 
 from sympify import sympify
 from add    import Add
+
