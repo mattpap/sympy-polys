@@ -3,13 +3,14 @@ from sympy import (
     Symbol, Matrix, Integral, log, Rational, Derivative, exp, sqrt,
     pi, Function, sin, cos, pprint_use_unicode, oo, Eq, Le, Gt, Ne,
     Limit, factorial, gamma, conjugate, I, Piecewise, S, pprint,
-    Pow, RootOf, raises,
+    Pow, RootOf, RootSum, Lambda, raises,
 )
 
 from sympy.printing.pretty import pretty as xpretty
 
 x = Symbol('x')
 y = Symbol('y')
+z = Symbol('z')
 th  = Symbol('theta')
 ph  = Symbol('phi')
 
@@ -104,6 +105,12 @@ def test_pretty_relational():
 
 def test_pretty_RootOf():
     assert pretty(RootOf(x**5 + 11*x - 2, 0)) == "      / 5              \\\nRootOf\\x  + 11*x - 2, 0/"
+
+def test_pretty_RootSum():
+    assert pretty(RootSum(x**5 + 11*x - 2)) == \
+        "       / 5           \\\nRootSum\\x  + 11*x - 2/"
+    assert pretty(RootSum(x**5 + 11*x - 2, Lambda(z, z**2))) == \
+        "       / 5                   /    2\\\\\nRootSum\\x  + 11*x - 2, Lambda\\z, z //"
 
 def test_pretty_unicode():
     assert xpretty( oo, use_unicode=True ) == u'\u221e'

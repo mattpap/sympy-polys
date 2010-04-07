@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from sympy import symbols, Symbol, sin, cos, Matrix, Integral, pi, sqrt, Function, \
-    Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I, RootOf
+    Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I, RootOf, RootSum, Lambda
 from sympy.printing.pretty import pretty, pprint
 
-x,y,k = symbols('xyk')
+x,y,z,k = symbols('xyzk')
 th  = Symbol('theta')
 ph  = Symbol('phi')
 
@@ -413,6 +413,25 @@ def test_upretty_RootOf():
 u"""\
       ⎛ 5              ⎞
 RootOf⎝x  + 11⋅x - 2, 0⎠\
+"""
+
+    assert u == s
+
+def test_upretty_RootSum():
+    u = upretty(RootSum(x**5 + 11*x - 2, Lambda(z, z)))
+    s = \
+u"""\
+       ⎛ 5           ⎞
+RootSum⎝x  + 11⋅x - 2⎠\
+"""
+
+    assert u == s
+
+    u = upretty(RootSum(x**5 + 11*x - 2, Lambda(z, z**2)))
+    s = \
+u"""\
+       ⎛ 5              ⎛    2⎞⎞
+RootSum⎝x  + 11⋅x - 2, Λ⎝z, z ⎠⎠\
 """
 
     assert u == s
