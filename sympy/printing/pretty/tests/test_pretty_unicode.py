@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from sympy import symbols, Symbol, sin, cos, Matrix, Integral, pi, sqrt, Function, \
-    Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I, RootOf, RootSum, Lambda
+    Rational, tan, oo, Limit, ceiling, floor, conjugate, exp, I, RootOf, RootSum, \
+    Lambda, Not, And, Or, Xor, Nand, Nor, Implies, Equivalent
 from sympy.printing.pretty import pretty, pprint
 
 x,y,z,k = symbols('xyzk')
@@ -406,6 +407,20 @@ u"""\
 ⎩     ⎭\
 """
     assert u == s
+
+def test_upretty_Boolean():
+    assert upretty(Not(x, evaluate=False)) == u"¬ x"
+
+    assert upretty(And(x, y, evalute=False)) == u"x ∧ y"
+    assert upretty(Or(x, y, evalute=False)) == u"x ∨ y"
+
+    assert upretty(Xor(x, y, evaluate=False)) == u"x ⊻ y"
+
+    assert upretty(Nand(x, y, evaluate=False)) == u"x ⊼ y"
+    assert upretty(Nor(x, y, evaluate=False)) == u"x ⊽ y"
+
+    assert upretty(Implies(x, y, evaluate=False)) == u"x → y"
+    assert upretty(Equivalent(x, y, evaluate=False)) == u"x ≡ y"
 
 def test_upretty_RootOf():
     u = upretty(RootOf(x**5 + 11*x - 2, 0))

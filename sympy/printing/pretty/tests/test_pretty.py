@@ -3,7 +3,8 @@ from sympy import (
     Symbol, Matrix, Integral, log, Rational, Derivative, exp, sqrt,
     pi, Function, sin, cos, pprint_use_unicode, oo, Eq, Le, Gt, Ne,
     Limit, factorial, gamma, conjugate, I, Piecewise, S, pprint,
-    Pow, RootOf, RootSum, Lambda, raises,
+    Pow, RootOf, RootSum, Lambda, Not, And, Or, Xor, Nand, Nor,
+    Implies, Equivalent, raises,
 )
 
 from sympy.printing.pretty import pretty as xpretty
@@ -102,6 +103,20 @@ def test_pretty_relational():
     assert pretty(Ne(x/(y+1), y**2)) in [
             '  x       2\n----- != y \n1 + y      ',
             '  x       2\n----- != y \ny + 1      ']
+
+def test_pretty_Boolean():
+    assert pretty(Not(x, evaluate=False)) == "Not(x)"
+
+    assert pretty(And(x, y, evalute=False)) == "And(x, y)"
+    assert pretty(Or(x, y, evalute=False)) == "Or(x, y)"
+
+    assert pretty(Xor(x, y, evaluate=False)) == "Xor(x, y)"
+
+    assert pretty(Nand(x, y, evaluate=False)) == "Nand(x, y)"
+    assert pretty(Nor(x, y, evaluate=False)) == "Nor(x, y)"
+
+    assert pretty(Implies(x, y, evaluate=False)) == "Implies(x, y)"
+    assert pretty(Equivalent(x, y, evaluate=False)) == "Equivalent(x, y)"
 
 def test_pretty_RootOf():
     assert pretty(RootOf(x**5 + 11*x - 2, 0)) == "      / 5              \\\nRootOf\\x  + 11*x - 2, 0/"

@@ -289,6 +289,8 @@ class Basic(AssumeMeths):
     is_Piecewise = False
     is_Poly = False
     is_AlgebraicNumber = False
+    is_Boolean = False
+    is_Not = False
 
     def __new__(cls, *args, **assumptions):
         obj = object.__new__(cls)
@@ -1457,3 +1459,4 @@ C = ClassesRegistry()
 
 from sympify import _sympify, sympify, SympifyError
 S.__call__ = sympify
+
