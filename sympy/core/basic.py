@@ -572,7 +572,12 @@ class Basic(AssumeMeths):
                 return False    # sympy != other
 
             if type(self) is not type(other):
-                return False
+                eq = getattr(other, '_inner_eq', None)
+
+                if eq is not None:
+                    return eq(self)
+                else:
+                    return False
 
         # type(self) == type(other)
         st = self._hashable_content()
@@ -597,7 +602,12 @@ class Basic(AssumeMeths):
                 return True     # sympy != other
 
             if type(self) is not type(other):
-                return True
+                ne = getattr(other, '_inner_ne', None)
+
+                if ne is not None:
+                    return ne(self)
+                else:
+                    return True
 
         # type(self) == type(other)
         st = self._hashable_content()
