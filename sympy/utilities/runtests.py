@@ -21,6 +21,7 @@ from timeit import default_timer as clock
 import doctest as pdoctest # avoid clashing with our doctest() function
 from sympy.utilities import any
 from doctest import DocTestFinder
+from sympy.utilities import any, all
 import re as pre
 
 def sys_normcase(f):
@@ -46,6 +47,19 @@ def convert_to_native_paths(lst):
         newlst.append(sys_normcase(rv))
     return newlst
 
+def get_test_files_from_root(root, dir, pat='test_*.py'):
+    """
+    Returns the list of test_*.py (default) files at or below directory
+    `dir` relative to the sympy home directory.
+    """
+    dir = os.path.join(root, convert_to_native_paths([dir])[0])
+
+    g = []
+    for path, folders, files in os.walk(dir):
+        g.extend([os.path.join(path, f) for f in files if fnmatch(f, pat)])
+
+    return [sys_normcase(gi) for gi in g]
+
 def get_sympy_dir():
     """
     Returns the root sympy directory and set the global value
@@ -60,8 +74,6 @@ def get_sympy_dir():
                         os.path.isdir(sympy_dir.lower()) and
                         os.path.isdir(sympy_dir.upper()))
     return sys_normcase(sympy_dir)
-
-from sympy.utilities import any, all
 
 def isgeneratorfunction(object):
     """
@@ -401,18 +413,8 @@ class SymPyTests(object):
             return True
         return x.__name__.find(self._kw) != -1
 
-    def get_test_files(self, dir, pat = 'test_*.py'):
-        """
-        Returns the list of test_*.py (default) files at or below directory
-        `dir` relative to the sympy home directory.
-        """
-        dir = os.path.join(self._root_dir, convert_to_native_paths([dir])[0])
-
-        g = []
-        for path, folders, files in os.walk(dir):
-            g.extend([os.path.join(path, f) for f in files if fnmatch(f, pat)])
-
-        return [sys_normcase(gi) for gi in g]
+    def get_test_files(self, dir, pat='test_*.py'):
+        return get_test_files_from_root(self._root_dir, dir, pat)
 
 class SymPyDocTests(object):
 

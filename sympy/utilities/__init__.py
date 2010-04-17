@@ -17,6 +17,8 @@ from decorator import threaded, deprecated
 
 from runtests import test, doctest
 
+from paralleltests import parallel_test
+
 from pytest import raises
 
 from cythonutils import cythonized
