@@ -1,5 +1,5 @@
 
-from basic import Atom, S, C
+from basic import Basic, Atom, S, C, SingletonMeta
 from expr import Expr
 from cache import cacheit
 from sympy.logic.boolalg import Boolean
@@ -99,6 +99,8 @@ class Dummy(Symbol):
 
     __slots__ = ['dummy_index']
 
+    is_Dummy = True
+
     def __new__(cls, name, commutative=True, **assumptions):
         obj = Symbol.__xnew__(cls, name, commutative=commutative, **assumptions)
 
@@ -131,6 +133,8 @@ class Wild(Symbol):
     """
 
     __slots__ = ['exclude', 'properties']
+
+    is_Wild = True
 
     def __new__(cls, name, exclude=None, properties=None, **assumptions):
         if type(exclude) is list:
@@ -183,6 +187,36 @@ class Wild(Symbol):
     def __call__(self, *args, **assumptions):
         return WildFunction(self.name, nargs=len(args))(*args, **assumptions)
 
+class Pure(Symbol):
+    """A symbol which is equal to all commutative symbols. """
+    __metaclass__ = SingletonMeta
+
+    __slots__ = ['is_commutative', 'name']
+    is_commutative, name = True, 'pure'
+
+    is_Pure   = True
+
+    def _inner_eq(self, other):
+        """Inner equality function for pure symbol. """
+        return other.is_Pure or (other.is_Symbol and not other.is_Wild and other.is_commutative)
+
+    def __eq__(self, other):
+        """Outer equality function for pure symbol. """
+        if type(self) is not type(other):
+            try:
+                other = _sympify(other)
+            except SympifyError:
+                return False
+
+        return self._inner_eq(other)
+
+    def _inner_ne(self, other):
+        """Inner unequality function for pure symbol. """
+        return not self._inner_eq(other)
+
+    def __ne__(self, other):
+        """Outer unequality function for pure symbol. """
+        return not self.__eq__(other)
 
 def symbols(*names, **kwargs):
     """
@@ -291,4 +325,8 @@ def var(*names, **kwargs):
         # doc
         del frame
 
-from sympify import sympify
+Basic.singleton['pure'] = Pure
+
+from sympify import sympify, _sympify, SympifyError
+
+
