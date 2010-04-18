@@ -9,7 +9,7 @@ class SympifyError(ValueError):
         self.base_exc = base_exc
     def __str__(self):
         if self.base_exc is None:
-            return "SympifyError: %s" % (self.expr,)
+            return self.expr
 
         return "Sympify of expression '%s' failed, because of exception being raised:\n%s: %s" % (self.expr, self.base_exc.__class__.__name__, str(self.base_exc))
 
@@ -189,3 +189,4 @@ def _sympify(a):
 
 
 from basic import Basic, BasicType, S
+

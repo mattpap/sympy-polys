@@ -4,7 +4,7 @@ from sympy import (
     pi, Function, sin, cos, pprint_use_unicode, oo, Eq, Le, Gt, Ne,
     Limit, factorial, gamma, conjugate, I, Piecewise, S, pprint,
     Pow, RootOf, RootSum, Lambda, Not, And, Or, Xor, Nand, Nor,
-    Implies, Equivalent, raises,
+    Implies, Equivalent, raises, HoldAdd, HoldMul, HoldPow,
 )
 
 from sympy.printing.pretty import pretty as xpretty
@@ -95,6 +95,15 @@ def test_pretty_ordering():
 
     assert pretty(f, order='lex') == '   4    2    3    2\n2*x  - x  + y  + y '
     assert pretty(f, order='rev-lex') == ' 2    3    2      4\ny  + y  - x  + 2*x '
+
+def test_pretty_hold():
+    assert pretty(HoldAdd(1, 2, 3)) == '1 + 2 + 3'
+    assert pretty(HoldAdd(-1, 2, 3)) == '-1 + 2 + 3'
+
+    assert pretty(HoldMul(1, 2, 3)) == '1*2*3'
+    assert pretty(HoldMul(-1, 2, 3)) == '-1*2*3'
+
+    assert pretty(HoldPow(1, 2)) == ' 2\n1 '
 
 def test_pretty_relational():
     assert pretty(Eq(x, y)) == 'x = y'

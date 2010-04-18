@@ -23,8 +23,6 @@ If the ast module is not available (python2.4 and 2.5), we use the old compiler
 module.
 """
 
-from sympy import Basic
-
 try:
     from ast import parse, NodeTransformer, Call, Name, Load, \
             fix_missing_locations, Str
@@ -54,6 +52,8 @@ if ast_enabled:
             if node.id in self.local_dict:
                 return node
             elif node.id in self.global_dict:
+                from sympy import Basic
+
                 name_obj = self.global_dict[node.id]
 
                 if isinstance(name_obj, (Basic, type)) or callable(name_obj):

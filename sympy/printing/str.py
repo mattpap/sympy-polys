@@ -47,10 +47,13 @@ class StrPrinter(Printer):
         # This particular solution is slow, but it ensures a sane ordering. It
         # can of course be improved:
 
-        if order is None and self.order is None:
-            terms = sorted(expr.args, Basic._compare_pretty)
+        if order is not False:
+            if order is None and self.order is None:
+                terms = sorted(expr.args, Basic._compare_pretty)
+            else:
+                terms = [ elt[-1] for elt in self.analyze(expr, order) ]
         else:
-            terms = [ elt[-1] for elt in self.analyze(expr, order) ]
+            terms = expr.args
 
         PREC = precedence(expr)
         l = []
@@ -69,6 +72,20 @@ class StrPrinter(Printer):
         if sign=='+':
             sign = ""
         return sign + ' '.join(l)
+
+    def _print_HoldAdd(self, expr):
+        return self._print_Add(expr, order=False)
+
+    def _print_HoldMul(self, expr):
+        PREC = precedence(expr)
+
+        args = [ self.parenthesize(arg, PREC) for arg in expr.args ]
+
+        return '*'.join(args)
+
+    def _print_HoldPow(self, expr):
+        return '%s**%s' % (self.parenthesize(expr.base, precedence(expr)),
+                           self.parenthesize(expr.exp,  precedence(expr)))
 
     def _print_Assume(self, expr):
         return 'Assume(%s, %r, %s)' % (expr.expr, expr.key, expr.value)

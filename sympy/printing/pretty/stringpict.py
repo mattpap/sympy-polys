@@ -382,10 +382,11 @@ class prettyForm(stringPict):
     def __truediv__(self, o):
         return self.__div__(o)
 
-    def __mul__(self, *others):
+    def __mul__(self, *others, **kwargs):
         """Make a pretty multiplication.
         Parentheses are needed around +, - and neg.
         """
+        hold = kwargs.get('hold', False)
         args = self
         if args.binding > prettyForm.MUL: arg = stringPict(*args.parens())
         result = [args]
@@ -396,7 +397,7 @@ class prettyForm(stringPict):
             result.append(arg)
         len_res = len(result)
         for i in xrange(len_res):
-            if i < len_res-1 and result[i] == '-1' and result[i+1] == xsym('*'):
+            if not hold and i < len_res-1 and result[i] == '-1' and result[i+1] == xsym('*'):
                 # substitute -1 by -, like in -1*x -> -x
                 result.pop(i)
                 result.pop(i)
@@ -455,3 +456,4 @@ class prettyForm(stringPict):
         argumentList = stringPict(*stringPict.next(*argumentList[1:]))
         argumentList = stringPict(*argumentList.parens())
         return prettyForm(binding=prettyForm.ATOM, *argumentList.left(function))
+

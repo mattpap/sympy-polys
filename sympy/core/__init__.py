@@ -18,7 +18,10 @@ from function import Lambda, WildFunction, Derivative, diff, FunctionClass, \
     expand_trig, expand_complex
 from sets import Set, Interval, Union, EmptySet
 from evalf import PrecisionExhausted, N
+from holdtools import hold, unhold, unhold_first
+from holdclasses import HoldAdd, HoldMul, HoldPow, hold_sqrt
 
 # expose singletons like exp, log, oo, I, etc.
 for _n, _cls in Basic.singleton.items():
     exec '%s = _cls()' % (_n)
+

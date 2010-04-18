@@ -489,10 +489,13 @@ class PrettyPrinter(Printer):
             return self._print_Function(e)
 
     def _print_Add(self, expr, order=None):
-        if order is None and self.order is None:
-            terms = sorted(expr.args, Basic._compare_pretty)
+        if order is not False:
+            if order is None and self.order is None:
+                terms = sorted(expr.args, Basic._compare_pretty)
+            else:
+                terms = [ elt[-1] for elt in self.analyze(expr, order) ]
         else:
-            terms = [ elt[-1] for elt in self.analyze(expr, order) ]
+            terms = expr.args
 
         pforms = []
 
@@ -614,6 +617,23 @@ class PrettyPrinter(Printer):
         # None of the above special forms, do a standard power
         b,e = power.as_base_exp()
         return self._print(b)**self._print(e)
+
+    def _print_HoldAdd(self, expr):
+        return self._print_Add(expr, order=False)
+
+    def _print_HoldMul(self, expr):
+        pforms = []
+
+        for arg in expr.args:
+            if arg.is_Add:
+                pforms.append(prettyForm(*self._print(arg).parens()))
+            else:
+                pforms.append(self._print(arg))
+
+        return prettyForm.__mul__(*pforms, **{'hold': True})
+
+    def _print_HoldPow(self, expr):
+        return self._print(expr.base)**self._print(expr.exp)
 
     def __print_numer_denom(self, p, q):
         if q == 1:

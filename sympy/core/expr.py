@@ -1,11 +1,12 @@
 
 from basic import Basic, S, C
 from evalf import EvalfMixin
+from holdtools import HoldMixin
 from decorators import _sympifyit
 from cache import cacheit
 
 
-class Expr(Basic, EvalfMixin):
+class Expr(Basic, EvalfMixin, HoldMixin):
     __slots__ = []
 
     # ***************
@@ -904,3 +905,4 @@ from function import FunctionClass, Derivative
 from numbers import Rational, Integer
 from sympify import _sympify, sympify, SympifyError
 from symbol import Wild
+

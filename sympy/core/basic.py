@@ -296,6 +296,7 @@ class Basic(AssumeMeths):
     is_Equality = False
     is_Boolean = False
     is_Not = False
+    is_Hold = False
 
     def __new__(cls, *args, **assumptions):
         obj = object.__new__(cls)

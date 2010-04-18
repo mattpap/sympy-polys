@@ -483,7 +483,7 @@ class Add(AssocOp):
         return self.new(*terms)
 
     def __neg__(self):
-        return Add(*[-t for t in self.args])
+        return self.new(*[-t for t in self.args])
 
     def _sage_(self):
         s = 0
@@ -497,3 +497,4 @@ class Add(AssocOp):
 
 from mul import Mul
 from symbol import Symbol
+
