@@ -41,6 +41,13 @@ def test_sympify_bool():
     assert sympify(True) == True
     assert sympify(False)== False
 
+def test_sympify_int_long():
+    assert sympify('1') == Integer(1)
+    assert type(sympify('1')) != int
+
+    assert sympify('1L') == Integer(1)
+    assert type(sympify('1L')) != long
+
 def test_sympify4():
     class A:
         def _sympy_(self):
@@ -258,3 +265,4 @@ def test_issue1689():
 
 def test_issue1699_None():
     assert S(None) == None
+

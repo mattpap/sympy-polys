@@ -42,7 +42,7 @@ if ast_enabled:
             self.global_dict = global_dict
 
         def visit_Num(self, node):
-            if isinstance(node.n, int):
+            if isinstance(node.n, (int, long)):
                 return fix_missing_locations(Call(Name('Integer', Load()),
                         [node], [], None, None))
             elif isinstance(node.n, float):
@@ -99,3 +99,4 @@ def parse_expr(s, local_dict):
             return SymPyParser(local_dict=local_dict).parse_expr(s)
         except SyntaxError:
             raise SympifyError("sorry")
+
