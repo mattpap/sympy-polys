@@ -11,6 +11,8 @@ from sympy.polys.polyerrors import (
     DomainError,
 )
 
+from sympy.polys.polyclasses import DMP, DMF
+
 from sympy import S, sqrt, sin, oo, raises, all
 
 from sympy.abc import x, y, z
@@ -411,4 +413,11 @@ def test_Domain___eq__():
 
     assert (ZZ.frac_field(x,y) == QQ.frac_field(x,y)) == False
     assert (QQ.frac_field(x,y) == ZZ.frac_field(x,y)) == False
+
+def test_PolynomialRing_from_FractionField():
+    f = DMF(([1, 0, 1], [1, 1]), ZZ)
+    g = DMF(([1, 0, 1], [1]), ZZ)
+
+    assert ZZ[x].from_FractionField(f, ZZ[x]) is None
+    assert ZZ[x].from_FractionField(g, ZZ[x]) == DMP([ZZ(1), ZZ(0), ZZ(1)], ZZ)
 
