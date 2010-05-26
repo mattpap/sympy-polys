@@ -494,3 +494,12 @@ def capture(func):
     sys.stdout = stdout
     return file.getvalue()
 
+def dict_merge(*dicts):
+    """Merge dictionaries into a single dictionary. """
+    merged = {}
+
+    for dict in dicts:
+        merged.update(dict)
+
+    return merged
+
