@@ -14,7 +14,7 @@ def test_printmethod():
     assert fcode(nint(x)) == "      nint(x)"
 
 def test_fcode_Pow():
-    x, y = symbols('xy')
+    x, y = symbols('x,y')
     assert fcode(x**3) == "      x**3"
     assert fcode(x**(y**3)) == "      x**(y**3)"
     assert fcode(1/(sin(x)*3.5)**(x - y**x)/(x**2 + y)) == \
@@ -34,7 +34,7 @@ def test_fcode_Integer():
     assert fcode(Integer(-1)) == "      -1"
 
 def test_fcode_functions():
-    x, y = symbols('xy')
+    x, y = symbols('x,y')
     assert fcode(sin(x) ** cos(y)) == "      sin(x)**cos(y)"
 
 def test_fcode_NumberSymbol():
@@ -65,7 +65,7 @@ def test_fcode_complex():
     assert fcode(3+x) == "      3 + x"
 
 def test_implicit():
-    x, y = symbols('xy')
+    x, y = symbols('x,y')
     assert fcode(sin(x)) == "      sin(x)"
     assert fcode(atan2(x,y)) == "      atan2(x, y)"
     assert fcode(conjugate(x)) == "      conjg(x)"
@@ -92,7 +92,7 @@ def test_assign_to():
     assert fcode(sin(x), assign_to="s") == "      s = sin(x)"
 
 def test_line_wrapping():
-    x, y = symbols('xy')
+    x, y = symbols('x,y')
     assert fcode(((x+y)**10).expand(), assign_to="var") == (
         "      var = 45*x**8*y**2 + 120*x**7*y**3 + 210*x**6*y**4 + 252*x**5*y**5\n"
         "     @ + 210*x**4*y**6 + 120*x**3*y**7 + 45*x**2*y**8 + 10*x*y**9 + 10*y\n"
@@ -217,3 +217,4 @@ def test_wrap_fortran():
 
 def test_settings():
     raises(TypeError, 'fcode(S(4), method="garbage")')
+

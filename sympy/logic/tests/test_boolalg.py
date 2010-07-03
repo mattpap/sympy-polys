@@ -5,7 +5,7 @@ from sympy.utilities.pytest import raises, XFAIL
 
 def test_overloading():
     """Test that |, & are overloaded as expected"""
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert A & B == And(A, B)
     assert A | B == Or(A, B)
     assert (A & B) | C == Or(And(A, B), C)
@@ -14,7 +14,7 @@ def test_overloading():
     assert ~A == Not(A)
 
 def test_And():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert And() == True
     assert And(A) == A
     assert And(True) == True
@@ -29,7 +29,7 @@ def test_And():
     assert And(True, False, A) == False
 
 def test_Or():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert Or() == False
     assert Or(A) == A
     assert Or(True) == True
@@ -44,7 +44,7 @@ def test_Or():
     assert Or(False, False, A) == A
 
 def test_Xor():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert Xor() == False
     assert Xor(A) == A
     assert Xor(True) == True
@@ -66,7 +66,7 @@ def test_Not():
     assert Not(False,False) == [True,  True ]
 
 def test_Nand():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert Nand() == False
     assert Nand(A) == ~A
     assert Nand(True) == False
@@ -81,7 +81,7 @@ def test_Nand():
     assert Nand(True, False, A) == True
 
 def test_Nor():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert Nor() == False
     assert Nor(A) == ~A
     assert Nor(True) == False
@@ -96,7 +96,7 @@ def test_Nor():
     assert Nor(True, False, A) == False
 
 def test_Implies():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     raises(ValueError, "Implies(A,B,C)")
     assert Implies(True, True) == True
     assert Implies(True, False) == False
@@ -105,13 +105,13 @@ def test_Implies():
     assert A >> B == B << A
 
 def test_Equivalent():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert Equivalent(A, B) == Equivalent(B, A)
 
 def test_bool_symbol():
     """Test that mixing symbols with boolean values
     works as expected"""
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert And(A, True)  == A
     assert And(A, True, True) == A
     assert And(A, False) == False
@@ -120,7 +120,7 @@ def test_bool_symbol():
     assert Or(A, False)  == A
 
 def test_subs():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert (A & B).subs(A, True) == B
     assert (A & B).subs(A, False) == False
     assert (A & B).subs(B, True) == A
@@ -139,17 +139,17 @@ see http://en.wikipedia.org/wiki/Boolean_algebra_(structure)
 
 def test_commutative():
     """Test for commutativity of And and Not"""
-    A, B = symbols('AB')
+    A, B, C = symbols('A,B,C')
     assert A & B == B & A
     assert A | B == B | A
 
 def test_and_associativity():
     """Test for associativity of And"""
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert (A & B) & C == A & (B & C)
 
 def test_or_assicativity():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert ((A | B) | C) == (A | (B | C))
 
 def test_double_negation():
@@ -157,20 +157,20 @@ def test_double_negation():
     assert ~(~a) == a
 
 def test_De_Morgan():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert ~(A & B) == (~A) | (~B)
     assert ~(A | B) == (~A) & (~B)
     assert ~(A | B | C) == ~A & ~B  & ~C
 
 # test methods
 def test_eliminate_implications():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert eliminate_implications( A >> B) == (~A) | B
     assert eliminate_implications(A >> (C >>Not(B))) \
         == Or(Or(Not(B), Not(C)), Not(A))
 
 def test_conjuncts():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert set(conjuncts(A & B & C)) == set([A, B, C])
     assert set(conjuncts((A | B) & C)) == set([A | B, C])
     assert conjuncts(A) == [A]
@@ -178,7 +178,7 @@ def test_conjuncts():
     assert conjuncts(False) == [False]
 
 def test_disjuncts():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert disjuncts(A | B | C) == [A, B, C]
     assert disjuncts((A | B) & C) == [(A | B) & C]
     assert disjuncts(A) == [A]
@@ -186,11 +186,11 @@ def test_disjuncts():
     assert disjuncts(False) == [False]
 
 def test_distribute():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert distribute_and_over_or(Or(And(A, B), C)) == And(Or(A, C), Or(B, C))
 
 def test_to_cnf():
-    A, B, C = symbols('ABC')
+    A, B, C = symbols('A,B,C')
     assert to_cnf(~(B | C)) == And(Not(B), Not(C))
     assert to_cnf((A & B) | C) == And(Or(A, C), Or(B, C))
     assert to_cnf(A >> B) == (~A) | B
@@ -206,7 +206,7 @@ def test_compile_rule():
     assert compile_rule("A & B") == sympify("A & B")
 
 def test_to_int_repr():
-    x, y, z = symbols('x y z')
+    x, y, z = symbols('x,y,z')
     def sorted_recursive(arg):
         try:
             return sorted(sorted_recursive(x) for x in arg)
@@ -222,3 +222,4 @@ def test_fuzzy_not():
     assert fuzzy_not(False) == True
     assert fuzzy_not(True) == False
     assert fuzzy_not(None) == None
+

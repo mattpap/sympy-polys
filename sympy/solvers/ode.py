@@ -765,7 +765,7 @@ def odesimp(eq, func, order, hint):
     **Example**
         >>> from sympy import sin, symbols, dsolve, pprint, Function
         >>> from sympy.solvers.ode import odesimp
-        >>> x , u2, C1= symbols('x u2 C1')
+        >>> x , u2, C1= symbols('x,u2,C1')
         >>> f = Function('f')
 
         >>> eq = dsolve(x*f(x).diff(x) - f(x) - x*sin(f(x)/x), f(x),
@@ -915,7 +915,7 @@ def checkodesol(ode, func, sol, order='auto', solve_for_func=True):
 
     **Examples**
         >>> from sympy import Eq, Function, checkodesol, symbols
-        >>> x, C1 = symbols('x C1')
+        >>> x, C1 = symbols('x,C1')
         >>> f = Function('f')
         >>> checkodesol(f(x).diff(x), f(x), Eq(f(x), C1))
         (True, 0)
@@ -1068,7 +1068,7 @@ def compare_ode_sol(sol1, sol2, func, *args):
     **Examples**
         >>> from sympy import symbols, Function, Eq, tan, cos, sqrt
         >>> from sympy.solvers.ode import compare_ode_sol
-        >>> x, C1 = symbols('x C1')
+        >>> x, C1 = symbols('x,C1')
         >>> f = Function('f')
         >>> # # This is from dsolve(x*f(x).diff(x) - f(x) - x*sin(f(x)/x), \
         >>> # f(x), hint='1st_homogeneous_coeff_subs_indep_div_dep')
@@ -1201,7 +1201,7 @@ def constantsimp(expr, independentsymbol, endnumber, startnumber=1,
     **Examples**
         >>> from sympy import symbols
         >>> from sympy.solvers.ode import constantsimp
-        >>> C1, C2, C3, x, y = symbols('C1 C2 C3 x y')
+        >>> C1, C2, C3, x, y = symbols('C1,C2,C3,x,y')
         >>> constantsimp(2*C1*x, x, 3)
         C1*x
         >>> constantsimp(C1 + 2 + x + y, x, 3)
@@ -1315,7 +1315,7 @@ def ode_renumber(expr, symbolname, startnumber, endnumber):
     **Example**
         >>> from sympy import symbols, Eq, pprint
         >>> from sympy.solvers.ode import ode_renumber
-        >>> x, C1, C2, C3 = symbols('x C1 C2 C3')
+        >>> x, C1, C2, C3 = symbols('x,C1,C2,C3')
         >>> pprint(C2 + C1*x + C3*x**2)
                         2
         C2 + C1*x + C3*x
@@ -1461,7 +1461,7 @@ def ode_1st_exact(eq, func, order, match):
     dP/dy = dQ/dx.  Then, the solution will be as given below::
 
         >>> from sympy import Function, Eq, Integral, symbols, pprint
-        >>> x, y, t, x0, y0, C1= symbols('x y t x0 y0 C1')
+        >>> x, y, t, x0, y0, C1= symbols('x,y,t,x0,y0,C1')
         >>> P, Q, F= map(Function, ['P', 'Q', 'F'])
         >>> pprint(Eq(Eq(F(x, y), Integral(P(t, y), (t, x0, x)) +
         ... Integral(Q(x0, t), (t, y0, y))), C1))

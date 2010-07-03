@@ -207,8 +207,8 @@ class AntiSymmetricTensor(TensorSymbol):
 
         >>> from sympy import symbols
         >>> from sympy.physics.secondquant import AntiSymmetricTensor
-        >>> i, j = symbols('i j', below_fermi=True)
-        >>> a, b = symbols('a b', above_fermi=True)
+        >>> i, j = symbols('i,j', below_fermi=True)
+        >>> a, b = symbols('a,b', above_fermi=True)
         >>> AntiSymmetricTensor('t', (a, b), (i, j))
         AntiSymmetricTensor(t, SymTuple(a, b), SymTuple(i, j))
         >>> AntiSymmetricTensor('t', (b, a), (i, j))
@@ -3003,3 +3003,4 @@ def simplify_index_permutations(expr, permutation_operators):
         return Add(*terms)
 
     return expr
+

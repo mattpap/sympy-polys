@@ -5,7 +5,7 @@ from sympy import symbols, Symbol, sin, cos, Matrix, Integral, pi, sqrt, Functio
     Lambda, Not, And, Or, Xor, Nand, Nor, Implies, Equivalent
 from sympy.printing.pretty import pretty, pprint
 
-x,y,z,k = symbols('xyzk')
+x,y,z,k = symbols('x,y,z,k')
 th  = Symbol('theta')
 ph  = Symbol('phi')
 

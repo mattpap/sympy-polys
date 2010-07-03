@@ -31,7 +31,7 @@ def test_pretty():
     assert pretty(Assume(x, 'positive', True)) == "Assume(x, 'positive', True)"
 
 def test_eliminate_assumptions():
-    a, b, x, y = symbols('abxy')
+    a, b, x, y = symbols('a,b,x,y')
     assert eliminate_assume(Assume(x, 'a', True))  == a
     assert eliminate_assume(Assume(x, 'a', True), symbol=x)  == a
     assert eliminate_assume(Assume(x, 'a', True), symbol=y)  == None
@@ -42,7 +42,7 @@ def test_eliminate_assumptions():
 
 def test_global():
     """Test for global assumptions"""
-    x, y = symbols('x y')
+    x, y = symbols('x,y')
     global_assumptions.add(Assume(x>0))
     assert Assume(x>0) in global_assumptions
     global_assumptions.remove(Assume(x>0))
@@ -54,3 +54,4 @@ def test_global():
     global_assumptions.clear()
     assert not Assume(x>0) in global_assumptions
     assert not Assume(y>0) in global_assumptions
+

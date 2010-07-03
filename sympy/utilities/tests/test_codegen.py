@@ -28,7 +28,7 @@ def test_empty_c_header():
     assert source == "#ifndef PROJECT__FILE__H\n#define PROJECT__FILE__H\n#endif\n"
 
 def test_simple_c_code():
-    x,y,z = symbols('xyz')
+    x,y,z = symbols('x,y,z')
     expr = (x+y)*z
     routine = Routine("test", [InputArgument(symbol) for symbol in x,y,z], [Result(expr)])
     code_gen = CCodeGen()
@@ -43,7 +43,7 @@ def test_simple_c_code():
     assert source == expected
 
 def test_simple_c_header():
-    x,y,z = symbols('xyz')
+    x,y,z = symbols('x,y,z')
     expr = (x+y)*z
     routine = Routine("test", [InputArgument(symbol) for symbol in x,y,z], [Result(expr)])
     code_gen = CCodeGen()
@@ -57,7 +57,7 @@ def test_simple_c_header():
     assert source == expected
 
 def test_simple_c_codegen():
-    x,y,z = symbols('xyz')
+    x,y,z = symbols('x,y,z')
     expr = (x+y)*z
     result = codegen(("test", (x+y)*z), "C", "file", header=False, empty=False)
     expected = [
@@ -76,7 +76,7 @@ def test_simple_c_codegen():
     assert result == expected
 
 def test_multiple_results_c():
-    x,y,z = symbols('xyz')
+    x,y,z = symbols('x,y,z')
     expr1 = (x+y)*z
     expr2 = (x-y)*z
     routine = Routine(
@@ -149,7 +149,7 @@ def test_ansi_math1_codegen():
 def test_ansi_math2_codegen():
     # not included: frexp, ldexp, modf, fmod
     from sympy import atan2, N
-    x, y = symbols('xy')
+    x, y = symbols('x,y')
     name_expr = [
         ("test_atan2", atan2(x,y)),
         ("test_pow", x**y),
@@ -171,7 +171,7 @@ def test_ansi_math2_codegen():
 
 def test_complicated_codegen():
     from sympy import sin, cos, tan, N
-    x,y,z = symbols('xyz')
+    x,y,z = symbols('x,y,z')
     name_expr = [
         ("test1", ((sin(x)+cos(y)+tan(z))**7).expand()),
         ("test2", cos(cos(cos(cos(cos(cos(cos(cos(x+y+z))))))))),
@@ -229,3 +229,4 @@ def test_complicated_codegen():
         'double test2(double x, double y, double z);\n'
         '#endif\n'
     )
+
