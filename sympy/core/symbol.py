@@ -232,6 +232,10 @@ def symbols(*names, **kwargs):
     if not 'each_char' in kwargs and len(names) == 1 and \
     isinstance(names[0], str) and (' ' in names[0] or ',' in names[0]):
         kwargs['each_char'] = False
+
+    _cls = kwargs.pop('cls', Symbol)
+    _tuple = kwargs.pop('tuple', False)
+
     if not kwargs.pop("each_char", True):
         names = names[0]
 
@@ -255,15 +259,15 @@ def symbols(*names, **kwargs):
                     start = int(start)
 
                 for i in xrange(start, int(end)):
-                    symbol = Symbol("%s%i" % (name, i), **kwargs)
+                    symbol = _cls("%s%i" % (name, i), **kwargs)
                     result.append(symbol)
             else:
-                symbol = Symbol(name, **kwargs)
+                symbol = _cls(name, **kwargs)
                 result.append(symbol)
 
         result = tuple(result)
 
-        if len(result) <= 1:
+        if not _tuple and len(result) <= 1:
             if not result:           # var('')
                 result = None
             else:                    # var('x')
@@ -273,9 +277,9 @@ def symbols(*names, **kwargs):
     else:
         # this is the old, deprecated behavior:
         if len(names) == 1:
-            result = [ Symbol(name, **kwargs) for name in names[0] ]
+            result = [ _cls(name, **kwargs) for name in names[0] ]
         else:
-            result = [ Symbol(name, **kwargs) for name in names ]
+            result = [ _cls(name, **kwargs) for name in names ]
         if len(result) == 1:
             return result[0]
         else:

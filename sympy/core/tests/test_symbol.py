@@ -150,3 +150,13 @@ def test_symbols():
     assert symbols('x1:2', each_char=False) == Symbol('x1')
     assert symbols('x1:3', each_char=False) == (Symbol('x1'), Symbol('x2'))
 
+    assert symbols('x,y,z', each_char=False, cls=Wild) == (Wild('x'), Wild('y'), Wild('z'))
+
+    assert symbols('', each_char=False, tuple=False) is None
+    assert symbols('x', each_char=False, tuple=False) == x
+    assert symbols('x,y', each_char=False, tuple=False) == (x, y)
+
+    assert symbols('', each_char=False, tuple=True) == ()
+    assert symbols('x', each_char=False, tuple=True) == (x,)
+    assert symbols('x,y', each_char=False, tuple=True) == (x, y)
+
