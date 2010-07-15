@@ -1,6 +1,7 @@
 from sympy import symbols, Integral, Basic, raises, Tuple
-from sympy.utilities.iterables import (postorder_traversal, preorder_traversal,
-    flatten, group, split, subsets, variations, cartes, dict_merge)
+from sympy.utilities.iterables import (postorder_traversal,
+    preorder_traversal, flatten, group, split, take, subsets,
+    variations, cartes, numbered_symbols, dict_merge)
 from sympy.functions.elementary.piecewise import Piecewise, ExprCondPair
 
 w,x,y,z= symbols('w,x,y,z')
@@ -154,6 +155,12 @@ def test_cartes():
     assert list(cartes([1, 2], [3, 4, 5])) == \
            [[1, 3], [1, 4], [1, 5], [2, 3], [2, 4], [2, 5]]
     assert list(cartes()) == [[]]
+
+def test_take():
+    X = numbered_symbols()
+
+    assert take(X, 5) == list(symbols('x0:5'))
+    assert take(X, 5) == list(symbols('x5:10'))
 
 def test_dict_merge():
     assert dict_merge({}, {1: x, y: z}) == {1: x, y: z}
