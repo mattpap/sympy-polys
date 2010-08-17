@@ -356,7 +356,7 @@ def test_separable5():
     sol16 = Eq(-exp(-f(x)**2)/2, C1 - x - x**2/2)
     sol17 = Eq(f(x), exp(C1 - x))
     sol18 = Eq(-log(1 - sin(2*f(x))**2)/4, C1 + log(1 - sin(x)**2)/2)
-    sol19 = Eq(f(x), -(1 - x - exp(C1 - x))/(1 - x))
+    sol19 = Eq(f(x), -1/(1 - x) + x/(1 - x) + exp(C1 - x)/(1 - x))
     sol20 = Eq(-log(1 - 3*f(x)**2)/6, C1 - x**2/2)
     sol21 = Eq(-exp(-f(x)), C1 + exp(x))
     assert dsolve(eq15, f(x), hint='separable') == sol15
