@@ -1117,6 +1117,9 @@ def simplify(expr):
     if not isinstance(expr, Basic): # XXX: temporary hack
         return expr
 
+    if expr.is_commutative is False:
+        return together(powsimp(expr))
+
     expr = together(cancel(powsimp(expr)).expand())
 
     if not isinstance(expr, Basic): # XXX: temporary hack
