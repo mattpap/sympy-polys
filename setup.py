@@ -71,6 +71,7 @@ modules = [
     'sympy.mpmath.matrices',
     'sympy.mpmath.calculus',
     'sympy.polys',
+    'sympy.polys.domains',
     'sympy.printing',
     'sympy.printing.pretty',
     'sympy.series',
