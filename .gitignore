@@ -2,7 +2,7 @@
 *.rej
 *.pyc
 *.pyo
-*.swp
+.*.sw[op]
 tags
 
 my/
@@ -14,3 +14,4 @@ doc/sphinx/
 
 .DS_Store
 *~
+
