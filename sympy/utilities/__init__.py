@@ -4,7 +4,8 @@ import sys
 
 from iterables import (iff, flatten, group, split, take, subsets,
     variations, numbered_symbols, cartes, capture, dict_merge,
-    postorder_traversal, preorder_traversal, interactive_traversal)
+    postorder_traversal, preorder_traversal, interactive_traversal,
+    prefixes, postfixes)
 
 if sys.version_info[0] <= 2 and sys.version_info[1] < 5:
     from iterables import any, all
