@@ -1,5 +1,4 @@
 from sympy import sin, cos, exp, cot, sqrt, S, I, E, pi, symbols, Function, Matrix, Eq, RootSum, Lambda, raises
-from sympy.simplify import together
 from sympy.integrals import integrate
 from sympy.utilities.pytest import XFAIL
 
