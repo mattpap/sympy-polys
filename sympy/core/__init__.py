@@ -19,7 +19,9 @@ from function import Lambda, WildFunction, Derivative, diff, FunctionClass, \
 from sets import Set, Interval, Union, EmptySet
 from evalf import PrecisionExhausted, N
 from containers import Tuple
+from exprtools import gcd_terms
 
 # expose singletons like exp, log, oo, I, etc.
 for _n, _cls in Basic.singleton.items():
     exec '%s = _cls()' % (_n)
+
