@@ -2,7 +2,8 @@ from sympy import Symbol, symbols, hypersimp, factorial, binomial, \
         collect, Function, powsimp, separate, sin, exp, Rational, fraction, \
         simplify, trigsimp, cos, tan, cot, log, ratsimp, Matrix, pi, integrate, \
         solve, nsimplify, GoldenRatio, sqrt, E, I, sympify, atan, Derivative, \
-        S, diff, oo, Eq, Integer, gamma, acos, Integral, logcombine, separatevars, erf
+        S, diff, oo, Eq, Integer, gamma, acos, Integral, logcombine, separatevars, \
+        erf, rcollect
 from sympy.utilities import all
 from sympy.utilities.pytest import XFAIL
 
@@ -342,6 +343,10 @@ def test_collect_D_0():
     # collect does not distinguish nested derivatives, so it returns
     #                                           -- (a + b)*D(D(f, x), x)
     assert collect(a*fxx     + b*fxx    , fxx)  == (a + b)*fxx
+
+def test_rcollect():
+    assert rcollect((x**2*y + x*y + x + y)/(x + y), y) == (x + y*(1 + x + x**2))/(x + y)
+    assert rcollect(sqrt(-((x + 1)*(y + 1))), z) == sqrt(-((x + 1)*(y + 1)))
 
 def test_separatevars():
     x,y,z,n = symbols('x,y,z,n')
