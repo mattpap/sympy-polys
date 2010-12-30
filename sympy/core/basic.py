@@ -936,6 +936,20 @@ class Basic(AssumeMeths):
                 return True
         return False
 
+    def find(self, query):
+        """Find all subexpressions matching a query. """
+        results = []
+
+        def rec_find(expr):
+            if query(expr):
+                results.append(expr)
+
+            for arg in expr.args:
+                rec_find(arg)
+
+        rec_find(self)
+        return results
+
     def matches(self, expr, repl_dict={}, evaluate=False):
         """
         Helper method for match() - switches the pattern and expr.

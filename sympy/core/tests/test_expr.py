@@ -448,6 +448,10 @@ def test_call():
 
     assert expr({ sqrt(sin(2*x)) : a, cos(2*x) : b, sin(2*x) : c, x : d, exp(x) : e}) == c + a*b*sin(d*e)
 
+def test_find():
+    assert (x + y + 2).find(lambda u: u.is_Number) == [S(2)]
+    assert (x + y + 2).find(lambda u: u.is_Symbol) in [[x, y], [y, x]]
+
 def test_has():
     x, y = symbols("x,y")
     f = Function("f")
