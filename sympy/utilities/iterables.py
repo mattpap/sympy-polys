@@ -516,7 +516,7 @@ def numbered_symbols(prefix='x', cls=None, start=0, *args, **assumptions):
 
 def take(iter, n):
     """Return ``n`` items from ``iter`` iterator. """
-    return [ iter.next() for i in xrange(n) ]
+    return [ value for _, value in zip(xrange(n), iter) ]
 
 def dict_merge(*dicts):
     """Merge dictionaries into a single dictionary. """
