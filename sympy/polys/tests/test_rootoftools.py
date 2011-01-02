@@ -17,7 +17,7 @@ from sympy import (
     raises, symbols, sqrt, I, Rational, Real, Lambda, log, exp,
 )
 
-from sympy.abc import x, y, r
+from sympy.abc import x, y, z, r
 
 def test_RootOf___new__():
     assert RootOf(x, 0) == 0
@@ -191,4 +191,7 @@ def test_RootSum_diff():
     h = Lambda(r, r*exp(r*x))
 
     assert RootSum(f, g).diff(x) == RootSum(f, h)
+
+def test_RootSum_rational():
+    assert RootSum(x**5 - x + 1, Lambda(z, z/(x - z))) == (4*x - 5)/(x**5 - x + 1)
 
