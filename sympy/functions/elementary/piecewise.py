@@ -71,9 +71,9 @@ class Piecewise(Function):
             cond_type = type(pair.cond)
             if not (cond_type is bool or issubclass(cond_type, Relational) or \
                     issubclass(cond_type, Number) or issubclass(cond_type, Set)):
-                raise TypeError, \
+                raise TypeError(
                     "Cond %s is of type %s, but must be a bool," \
-                    " Relational, Number or Set" % (pair.cond, cond_type)
+                    " Relational, Number or Set" % (pair.cond, cond_type))
             newargs.append(pair)
 
         r = cls.eval(*newargs)
@@ -181,9 +181,9 @@ class Piecewise(Function):
             elif cond.args[1] == sym:
                 curr[1] = S.Infinity
             else:
-                raise NotImplementedError, \
+                raise NotImplementedError(
                     "Currently only supporting evaluation with only " \
-                    "sym on one side of the relation."
+                    "sym on one side of the relation.")
             curr = [max(a, curr[0]), min(b, curr[1])]
             for n in xrange(len(int_expr)):
                 if self.__eval_cond(curr[0] < int_expr[n][1]) and \
@@ -212,9 +212,9 @@ class Piecewise(Function):
         if holes and default != None:
             int_expr.extend(holes)
         elif holes and default == None:
-            raise ValueError, "Called interval evaluation over piecewise " \
-                              "function on undefined intervals %s" % \
-                              ", ".join([str((h[0], h[1])) for h in holes])
+            raise ValueError("Called interval evaluation over piecewise " \
+                             "function on undefined intervals %s" % \
+                             ", ".join([str((h[0], h[1])) for h in holes]))
 
         # Finally run through the intervals and sum the evaluation.
         ret_fun = 0
@@ -280,3 +280,4 @@ def piecewise_fold(expr):
         if len(piecewise_args) > 1:
             return piecewise_fold(Piecewise(*new_args))
     return Piecewise(*new_args)
+

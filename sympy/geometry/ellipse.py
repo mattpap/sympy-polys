@@ -53,8 +53,8 @@ class Ellipse(GeometryEntity):
         eccentricity = sympify(eccentricity)
 
         if len(filter(None, (hradius, vradius, eccentricity))) != 2:
-            raise ValueError, 'Exactly two arguments between "hradius", '\
-                '"vradius", and "eccentricity" must be not None."'
+            raise ValueError('Exactly two arguments between "hradius", '\
+                '"vradius", and "eccentricity" must be not None."')
 
         if eccentricity is not None:
             if hradius is None:
@@ -431,3 +431,4 @@ class Circle(Ellipse):
             return list(set([Point(x,y), Point(x,-y), Point(-x,y), Point(-x,-y)]))
 
         return Ellipse.intersection(self, o)
+

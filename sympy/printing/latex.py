@@ -49,8 +49,8 @@ class LatexPrinter(Printer):
             valid_modes = ['inline', 'plain', 'equation', \
                             'equation*']
             if self._settings['mode'] not in valid_modes:
-                raise ValueError, "'mode' must be one of 'inline', 'plain', " \
-                    "'equation' or 'equation*'"
+                raise ValueError("'mode' must be one of 'inline', 'plain', " \
+                    "'equation' or 'equation*'")
 
         mul_symbol_table = {
             None : r" ",
@@ -783,3 +783,4 @@ def latex(expr, **settings):
 def print_latex(expr, **settings):
     """Prints LaTeX representation of the given expression."""
     print latex(expr, **settings)
+

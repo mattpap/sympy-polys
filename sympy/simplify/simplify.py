@@ -1120,7 +1120,7 @@ def powsimp(expr, deep=False, combine='all'):
 
     """
     if combine not in ['all', 'exp', 'base']:
-        raise ValueError, "combine must be one of ('all', 'exp', 'base')."
+        raise ValueError("combine must be one of ('all', 'exp', 'base').")
     y = Symbol('y', dummy=True)
     if expr.is_Pow:
         if deep:
