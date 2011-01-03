@@ -1081,6 +1081,12 @@ def test_issue415():
     assert sqrt(6)*sqrt(2)/2 == sqrt(3)
 
 def test_make_args():
+    assert Add.make_args(0) == (0,)
+    assert Mul.make_args(0) == (0,)
+
+    assert Add.make_args(1) == (1,)
+    assert Mul.make_args(1) == (1,)
+
     assert Add.make_args(x) == (x,)
     assert Mul.make_args(x) == (x,)
 

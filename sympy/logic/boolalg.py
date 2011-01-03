@@ -183,7 +183,10 @@ def conjuncts(expr):
     frozenset([Or(A, B)])
 
     """
-    return And.make_args(expr)
+    if expr == And.identity:
+        return set([])
+    else:
+        return And.make_args(expr)
 
 def disjuncts(expr):
     """Return a list of the disjuncts in the sentence s.
@@ -195,7 +198,10 @@ def disjuncts(expr):
     frozenset([And(A, B)])
 
     """
-    return Or.make_args(expr)
+    if expr == Or.identity:
+        return set([])
+    else:
+        return Or.make_args(expr)
 
 def distribute_and_over_or(expr):
     """
