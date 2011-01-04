@@ -65,8 +65,11 @@ class Integral(Expr):
             # no symbols provided -- let's compute full anti-derivative
             limits = [Tuple(symb) for symb in function.atoms(Symbol)]
 
-            if not limits:
-                return function
+            if len(limits) != 1:
+                if not limits:
+                    return function
+                else:
+                    raise ValueError("specify symbols to integrate %s" % function)
 
         obj = Expr.__new__(cls, **assumptions)
         arglist = [function]
