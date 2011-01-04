@@ -8,6 +8,8 @@ from sympy.polys.polyroots import root_factors, roots_linear,  \
     roots_quadratic, roots_cubic, roots_quartic, roots_binomial, \
     roots_rational, roots
 
+from sympy.utilities import all
+
 a, b, c, d, e, t, x, y, z = symbols('a,b,c,d,e,t,x,y,z')
 
 def test_roots_linear():
