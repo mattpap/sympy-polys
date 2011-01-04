@@ -51,7 +51,7 @@ def sdp_monoms(f):
 
 def sdp_sort(f, O):
     """Sort terms in `f` using the given monomial order `O`. """
-    return sorted(f, key=lambda (m, _): O(m), reverse=True)
+    return sorted(f, key=lambda term: O(term[0]), reverse=True)
 
 def sdp_strip(f):
     """Remove terms with zero coefficients from `f` in `K[X]`. """
@@ -96,8 +96,10 @@ def sdp_neg(f, u, O, K):
     """Negate a polynomial in `K[X]`. """
     return [ (monom, -coeff) for monom, coeff in f ]
 
-def sdp_add_term(f, (M, c), u, O, K):
+def sdp_add_term(f, term, u, O, K):
     """Add a single term using bisection method. """
+    M, c = term
+
     if not c:
         return f
     if not f:
@@ -131,8 +133,10 @@ def sdp_add_term(f, (M, c), u, O, K):
     else:
         return f[:i] + [(M, c)] + f[i+1:]
 
-def sdp_sub_term(f, (M, c), u, O, K):
+def sdp_sub_term(f, term, u, O, K):
     """Sub a single term using bisection method. """
+    M, c = term
+
     if not c:
         return f
     if not f:
@@ -166,8 +170,10 @@ def sdp_sub_term(f, (M, c), u, O, K):
     else:
         return f[:i] + [(M, -c)] + f[i+1:]
 
-def sdp_mul_term(f, (M, c), u, O, K):
+def sdp_mul_term(f, term, u, O, K):
     """Multiply a distributed polynomial by a term. """
+    M, c = term
+
     if not f or not c:
         return []
     else:
@@ -181,7 +187,7 @@ def sdp_add(f, g, u, O, K):
     h = dict(f)
 
     for monom, c in g:
-        if h.has_key(monom):
+        if monom in h:
             coeff = h[monom] + c
 
             if not coeff:
@@ -198,7 +204,7 @@ def sdp_sub(f, g, u, O, K):
     h = dict(f)
 
     for monom, c in g:
-        if h.has_key(monom):
+        if monom in h:
             coeff = h[monom] - c
 
             if not coeff:
@@ -231,7 +237,7 @@ def sdp_mul(f, g, u, O, K):
             monom = monomial_mul(fm, gm)
             coeff = fc*gc
 
-            if h.has_key(monom):
+            if monom in h:
                 coeff += h[monom]
 
                 if not coeff:
@@ -251,7 +257,7 @@ def sdp_sqr(f, u, O, K):
             monom = monomial_mul(fm, Fm)
             coeff = fc*Fc
 
-            if h.has_key(monom):
+            if monom in h:
                 coeff += h[monom]
 
                 if not coeff:
