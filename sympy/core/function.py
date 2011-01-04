@@ -560,8 +560,16 @@ class Derivative(Expr):
 
     def __new__(cls, expr, *symbols, **assumptions):
         expr = sympify(expr)
+
         if not symbols:
-            return expr
+            symbols = expr.atoms(C.Symbol)
+
+            if len(symbols) != 1:
+                if not symbols:
+                    return expr
+                else:
+                    raise ValueError("specify symbols to differentiate %s" % expr)
+
         symbols = Derivative._symbolgen(*symbols)
         if expr.is_commutative:
             assumptions["commutative"] = True
@@ -845,7 +853,7 @@ def diff(f, *symbols, **kwargs):
     # write the for loop manually.
     kwargs.setdefault('evaluate', True)
 
-    if hasattr(symbols[0], '__iter__'):
+    if symbols and hasattr(symbols[0], '__iter__'):
         retlist = []
         for i in symbols[0]:
             if hasattr(i, '__iter__'):
@@ -854,7 +862,7 @@ def diff(f, *symbols, **kwargs):
                 retlist.append(Derivative(f, i, **kwargs))
         return retlist
 
-    return Derivative(f,*symbols, **kwargs)
+    return Derivative(f, *symbols, **kwargs)
 
 @vectorize(0)
 def expand(e, deep=True, power_base=True, power_exp=True, mul=True, \

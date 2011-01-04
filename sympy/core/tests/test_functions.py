@@ -178,6 +178,18 @@ def test_diff_symbols():
     assert Derivative(Derivative(f(x, y, z), x), y)._eval_derivative(z) == \
         Derivative(f(x, y, z), x, y, z)
 
+def test_diff_no_symbols():
+    f = x**2 + 1
+    g = x**2 + y
+
+    assert diff(f) == 2*x
+    assert f.diff() == 2*x
+    assert Derivative(f).doit() == 2*x
+
+    raises(ValueError, "diff(g)")
+    raises(ValueError, "g.diff()")
+    raises(ValueError, "Derivative(g)")
+
 @XFAIL
 def test_combine():
     # XXX combine no longer exists
@@ -350,3 +362,4 @@ def test_doit():
     d = Derivative(f, x)
     assert d.doit() == 12
     assert d.doit(deep = False) == d
+
