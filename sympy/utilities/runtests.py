@@ -184,7 +184,6 @@ def doctest(*paths, **kwargs):
                     "sympy/galgebra/latex_ex.py", # needs numpy
                     "sympy/conftest.py", # needs py.test
                     "sympy/utilities/benchmarking.py", # needs py.test
-                    "doc/src/modules/polys", # very time consuming
                     ])
     blacklist = convert_to_native_paths(blacklist)
 
@@ -254,9 +253,8 @@ def doctest(*paths, **kwargs):
                 continue
             old_displayhook = sys.displayhook
             try:
-                out = pdoctest.testfile(txt_file, module_relative=False,
-                        optionflags=pdoctest.ELLIPSIS | \
-                        pdoctest.NORMALIZE_WHITESPACE)
+                out = pdoctest.testfile(txt_file, module_relative=False, encoding='utf-8',
+                    optionflags=pdoctest.ELLIPSIS | pdoctest.NORMALIZE_WHITESPACE)
             finally:
                 # make sure we return to the original displayhook in case some
                 # doctest has changed that
