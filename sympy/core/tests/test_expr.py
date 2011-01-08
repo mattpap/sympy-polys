@@ -1,5 +1,5 @@
 from sympy import Add, Basic, S, Symbol, Wild,  Real, Integer, Rational,  \
-    sin, cos, exp, log, oo, sqrt, symbols, Integral, sympify, \
+    sin, cos, tan, exp, log, oo, sqrt, symbols, Integral, sympify, \
     WildFunction, Poly, Function, Derivative, Number, pi, var, \
     NumberSymbol, zoo, Piecewise, Mul, Pow, nsimplify, ratsimp, trigsimp, \
     radsimp, powsimp, simplify, together, separate, collect, \
@@ -447,6 +447,21 @@ def test_call():
     expr = sqrt(sin(2*x))*sin(exp(x)*x)*cos(2*x) + sin(2*x)
 
     assert expr({ sqrt(sin(2*x)) : a, cos(2*x) : b, sin(2*x) : c, x : d, exp(x) : e}) == c + a*b*sin(d*e)
+
+def test_replace():
+    f = log(sin(x)) + tan(sin(x**2))
+
+    assert f.replace(sin, cos) == log(cos(x)) + tan(cos(x**2))
+    assert f.replace(sin, lambda a: sin(2*a)) == log(sin(2*x)) + tan(sin(2*x**2))
+
+    a = Wild('a')
+
+    assert f.replace(sin(a), cos(a)) == log(cos(x)) + tan(cos(x**2))
+    assert f.replace(sin(a), lambda a: sin(2*a)) == log(sin(2*x)) + tan(sin(2*x**2))
+
+    g = 2*sin(x**3)
+
+    assert g.replace(lambda expr: expr.is_Number, lambda expr: expr**2) == 4*sin(x**9)
 
 def test_find():
     expr = (x + y + 2 + sin(3*x))
