@@ -680,6 +680,18 @@ class Mul(AssocOp):
         return Add(*[t.count_ops(symbolic) for t in self.args]) + \
             (len(self.args) - 1)
 
+    def as_coeff_Mul(self):
+        """Efficiently extract the coefficient of a product. """
+        coeff, args = self.args[0], self.args[1:]
+
+        if coeff.is_Number:
+            if len(args) == 1:
+                return coeff, args[0]
+            else:
+                return coeff, self._new_rawargs(*args)
+        else:
+            return S.One, self
+
     def _eval_is_polynomial(self, syms):
         for term in self.args:
             if not term._eval_is_polynomial(syms):

@@ -824,6 +824,10 @@ class Expr(Basic, EvalfMixin):
         """Returns `self` as it was `Pow` instance. """
         return (self, S.One)
 
+    def as_coeff_Mul(self):
+        """Efficiently extract the coefficient of a product. """
+        return S.One, self
+
     ###################################################################################
     ##################### DERIVATIVE, INTEGRAL, FUNCTIONAL METHODS ####################
     ###################################################################################
