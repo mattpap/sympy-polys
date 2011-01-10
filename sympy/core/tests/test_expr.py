@@ -850,3 +850,7 @@ def test_expr_sorting():
 
     assert sorted(exprs, key=Basic.sorted_key) == exprs
 
+    exprs = [x + 1, x**2 + x + 1, x**3 + x**2 + x + 1]
+
+    assert sorted(exprs, key=Basic.sorted_key) == exprs
+
