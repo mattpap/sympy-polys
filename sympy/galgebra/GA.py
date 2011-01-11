@@ -2332,19 +2332,6 @@ class MV(object):
                         sympy.cancel(self.mv[igrade][ibase])
         return
 
-    def trim(self):
-        """
-        Applies sympy trim function
-        to each component of multivector.
-        """
-        for igrade in MV.n1rg:
-            if isinstance(self.mv[igrade],numpy.ndarray):
-                for ibase in range(MV.nbasis[igrade]):
-                    if self.mv[igrade][ibase] != ZERO:
-                        self.mv[igrade][ibase] = \
-                        sympy.trim(self.mv[igrade][ibase])
-        return
-
     def expand(self):
         """
         Applies sympy expand function to each component
@@ -2565,3 +2552,4 @@ def reciprocal_frame(vlst,names=''):
 
 def S(value):
     return(MV(value,'scalar'))
+
