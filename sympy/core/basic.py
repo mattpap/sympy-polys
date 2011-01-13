@@ -426,8 +426,14 @@ class Basic(AssumeMeths):
             if _term is not S.One:
                 for factor in Mul.make_args(_term):
                     if factor.is_number:
-                        coeff *= complex(factor)
-                    elif factor.is_commutative:
+                        try:
+                            coeff *= complex(factor)
+                        except ValueError:
+                            pass
+                        else:
+                            continue
+
+                    if factor.is_commutative:
                         base, exp = decompose_power(factor)
 
                         cpart[base] = exp
