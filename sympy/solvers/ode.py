@@ -470,15 +470,19 @@ def dsolve(eq, func, hint="default", simplify=True, **kwargs):
     # odesimp() will attempt to integrate, if necessary, apply constantsimp(),
     # attempt to solve for func, and apply any other hint specific simplifications
     if simplify:
-        return odesimp(solvefunc(eq, func, order=hints['order'],
+        result = odesimp(solvefunc(eq, func, order=hints['order'],
             match=hints[hint]), func, hints['order'], hint)
     else:
         # We still want to integrate (you can disable it separately with the hint)
         r = hints[hint]
         r['simplify'] = False # Some hints can take advantage of this option
-        return _handle_Integral(solvefunc(eq, func, order=hints['order'],
+        result = _handle_Integral(solvefunc(eq, func, order=hints['order'],
             match=hints[hint]), func, hints['order'], hint)
 
+    if not isinstance(result, Basic):
+        result = sorted(result, key=Basic.sorted_key)
+
+    return result
 
 def classify_ode(eq, func, dict=False):
     """
