@@ -596,13 +596,13 @@ def test_has_all_symbols():
     assert expr.has_all_symbols(x, y, z, t) == True
     assert expr.has_all_symbols(x, y, z, t, u) == False
 
-def test_as_poly_basic():
+def test_as_poly_as_expr():
     x, y = symbols('x,y')
 
     f = x**2 + 2*x*y
 
-    assert f.as_poly().as_basic() == f
-    assert f.as_poly(x, y).as_basic() == f
+    assert f.as_poly().as_expr() == f
+    assert f.as_poly(x, y).as_expr() == f
 
     assert (f + sin(x)).as_poly(x, y) is None
 
