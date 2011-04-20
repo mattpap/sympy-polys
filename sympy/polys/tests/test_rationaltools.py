@@ -52,3 +52,9 @@ def test_together():
 
     assert together(1/(A*B) + 1/(B*A)) in [(A*B + B*A)/(B*A**2*B), (A*B + B*A)/(A*B**2*A)]
 
+    assert together([1 + 1/x, 1/x + 1/y]) == [(x + 1)/x, (x + y)/(x*y)]
+    assert together((1 + 1/x, 1/x + 1/y)) == ((x + 1)/x, (x + y)/(x*y))
+    assert together({1 + 1/x: 1/x + 1/y}) == {(x + 1)/x: (x + y)/(x*y)}
+
+    assert (together(None) is None) == True
+

@@ -75,7 +75,10 @@ def together(expr, deep=False):
             else:
                 return expr.__class__(*[ _together(arg) for arg in expr.args ])
         elif hasattr(expr, '__iter__'):
-            return expr.__class__([ _together(ex) for ex in expr ])
+            if not isinstance(expr, dict):
+                return expr.__class__([ _together(ex) for ex in expr ])
+            else:
+                return expr.__class__([ (_together(key), _together(val)) for key, val in expr.iteritems() ])
 
         return expr
 
